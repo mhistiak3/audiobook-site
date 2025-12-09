@@ -1,13 +1,13 @@
 "use client";
 
-import { fetchPlaylist } from "@/lib/youtube";
+import { fetchSingleVideo } from "@/lib/youtube";
 import { useAppDispatch } from "@/store/hooks";
 import { addPlaylist } from "@/store/playlistSlice";
 import { Loader2, Plus, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function PlaylistInput() {
+export default function VideoInput() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,18 +19,18 @@ export default function PlaylistInput() {
     setError("");
 
     if (!url.trim()) {
-      setError("Please enter a YouTube playlist URL");
+      setError("Please enter a YouTube video URL");
       return;
     }
 
     setLoading(true);
 
     try {
-      const playlist = await fetchPlaylist(url);
-      dispatch(addPlaylist(playlist));
-      router.push(`/playlist/${playlist.id}`);
+      const video = await fetchSingleVideo(url);
+      dispatch(addPlaylist(video));
+      router.push(`/playlist/${video.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load playlist");
+      setError(err instanceof Error ? err.message : "Failed to load video");
     } finally {
       setLoading(false);
     }
@@ -47,7 +47,7 @@ export default function PlaylistInput() {
             type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="Paste YouTube Playlist URL"
+            placeholder="Paste YouTube Video URL"
             className="w-full bg-[#282828] text-white pl-12 pr-4 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder-gray-500 text-sm font-medium"
             disabled={loading}
           />

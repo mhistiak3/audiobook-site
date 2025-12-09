@@ -1,30 +1,46 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import YouTube, { YouTubeEvent, YouTubePlayer } from "react-youtube";
-import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { Video } from "@/lib/types";
+import { formatTime } from "@/lib/utils";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  setCurrentVideo,
+  setIsPlaying,
+  updateVideoProgress,
+} from "@/store/playerSlice";
+import { CheckCircle, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import YouTube, { YouTubeEvent, YouTubePlayer } from "react-youtube";
 
 interface AudioPlayerProps {
   videos: Video[];
   currentVideoIndex: number;
   onVideoChange: (index: number) => void;
+  playlistId: string;
 }
 
 export default function AudioPlayer({
   videos,
   currentVideoIndex,
   onVideoChange,
+  playlistId,
 }: AudioPlayerProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const dispatch = useAppDispatch();
+  const isPlayingRedux = useAppSelector((state) => state.player.isPlaying);
+  const videoProgress = useAppSelector((state) => state.player.videoProgress);
+
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
+  const hasRestoredPosition = useRef(false);
 
   const currentVideo = videos[currentVideoIndex];
+  const currentProgress = currentVideo
+    ? videoProgress[currentVideo.id]
+    : undefined;
 
   // Clear interval on unmount
   useEffect(() => {
@@ -35,12 +51,21 @@ export default function AudioPlayer({
     };
   }, []);
 
-  // Reset state when video changes
+  // Reset state when video changes and restore saved position
   useEffect(() => {
-    setPlayed(0);
-    setDuration(0);
-    // We don't reset isPlaying here to allow auto-play logic to handle it
-  }, [currentVideo]);
+    if (currentVideo) {
+      dispatch(
+        setCurrentVideo({ videoId: currentVideo.id, index: currentVideoIndex })
+      );
+      hasRestoredPosition.current = false;
+
+      // If there's saved progress, we'll restore it in onPlayerReady
+      if (!currentProgress) {
+        setPlayed(0);
+      }
+      setDuration(0);
+    }
+  }, [currentVideo, currentVideoIndex, dispatch, currentProgress]);
 
   if (!currentVideo) return null;
 
@@ -56,6 +81,17 @@ export default function AudioPlayer({
         if (duration > 0) {
           setPlayed(currentTime / duration);
           setDuration(duration);
+
+          // Save progress to Redux/localStorage every second
+          if (currentVideo) {
+            dispatch(
+              updateVideoProgress({
+                videoId: currentVideo.id,
+                currentTime,
+                duration,
+              })
+            );
+          }
         }
       }
     }, 1000);
@@ -70,8 +106,19 @@ export default function AudioPlayer({
 
   const onPlayerReady = (event: YouTubeEvent) => {
     playerRef.current = event.target;
-    setDuration(event.target.getDuration());
-    if (isPlaying) {
+    const videoDuration = event.target.getDuration();
+    setDuration(videoDuration);
+
+    // Restore saved position if available
+    if (currentProgress && !hasRestoredPosition.current) {
+      const savedTime = currentProgress.currentTime;
+      const savedProgress = savedTime / videoDuration;
+      setPlayed(savedProgress);
+      event.target.seekTo(savedTime, true);
+      hasRestoredPosition.current = true;
+    }
+
+    if (isPlayingRedux) {
       event.target.playVideo();
     }
   };
@@ -79,10 +126,10 @@ export default function AudioPlayer({
   const onPlayerStateChange = (event: YouTubeEvent) => {
     // 1 = Playing, 2 = Paused, 0 = Ended
     if (event.data === 1) {
-      setIsPlaying(true);
+      dispatch(setIsPlaying(true));
       startProgressTracking();
     } else if (event.data === 2) {
-      setIsPlaying(false);
+      dispatch(setIsPlaying(false));
       stopProgressTracking();
     } else if (event.data === 0) {
       handleNext();
@@ -92,7 +139,7 @@ export default function AudioPlayer({
   const handlePlayPause = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (playerRef.current) {
-      if (isPlaying) {
+      if (isPlayingRedux) {
         playerRef.current.pauseVideo();
       } else {
         playerRef.current.playVideo();
@@ -120,18 +167,6 @@ export default function AudioPlayer({
     if (currentVideoIndex > 0) {
       onVideoChange(currentVideoIndex - 1);
     }
-  };
-
-  const formatTime = (seconds: number) => {
-    if (!seconds || isNaN(seconds)) return "00:00";
-    const date = new Date(seconds * 1000);
-    const hh = date.getUTCHours();
-    const mm = date.getUTCMinutes();
-    const ss = date.getUTCSeconds().toString().padStart(2, "0");
-    if (hh) {
-      return `${hh}:${mm.toString().padStart(2, "0")}:${ss}`;
-    }
-    return `${mm}:${ss}`;
   };
 
   return (
@@ -175,15 +210,20 @@ export default function AudioPlayer({
             <h4 className="text-sm font-medium text-white truncate">
               {currentVideo.title}
             </h4>
-            <p className="text-xs text-gray-400">
-              Audiobook • {isPlaying ? "Playing" : "Paused"}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-gray-400">
+                Audiobook • {isPlayingRedux ? "Playing" : "Paused"}
+              </p>
+              {currentProgress?.watched && (
+                <CheckCircle size={12} className="text-green-500" />
+              )}
+            </div>
           </div>
           <button
             onClick={handlePlayPause}
             className="w-10 h-10 flex items-center justify-center text-white hover:scale-110 transition-transform"
           >
-            {isPlaying ? (
+            {isPlayingRedux ? (
               <Pause size={24} fill="white" />
             ) : (
               <Play size={24} fill="white" />
@@ -247,20 +287,21 @@ export default function AudioPlayer({
 
             {/* Progress Bar */}
             <div className="space-y-2">
-              <input
-                type="range"
-                min={0}
-                max={0.999999}
-                step="any"
-                value={played}
-                onChange={handleSeek}
-                className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-white"
-                style={{
-                  background: `linear-gradient(to right, #fff ${
-                    played * 100
-                  }%, #404040 ${played * 100}%)`,
-                }}
-              />
+              <div className="relative h-2 bg-gray-600/50 rounded-full overflow-hidden">
+                <div
+                  className="absolute top-0 left-0 h-full bg-white rounded-full transition-all"
+                  style={{ width: `${played * 100}%` }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={0.999999}
+                  step="any"
+                  value={played}
+                  onChange={handleSeek}
+                  className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+              </div>
               <div className="flex justify-between text-xs text-gray-400 font-medium">
                 <span>{formatTime(duration * played)}</span>
                 <span>{formatTime(duration)}</span>
@@ -280,7 +321,7 @@ export default function AudioPlayer({
                 onClick={handlePlayPause}
                 className="w-20 h-20 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg"
               >
-                {isPlaying ? (
+                {isPlayingRedux ? (
                   <Pause size={32} className="text-black fill-black" />
                 ) : (
                   <Play size={32} className="text-black fill-black ml-1" />

@@ -19,6 +19,33 @@ export function extractPlaylistId(url: string): string | null {
   }
 }
 
+// Extract video ID from YouTube URL
+export function extractVideoId(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+
+    // Handle different YouTube URL formats
+    if (
+      urlObj.hostname.includes("youtube.com") ||
+      urlObj.hostname.includes("youtu.be")
+    ) {
+      // youtube.com/watch?v=VIDEO_ID
+      if (urlObj.pathname === "/watch") {
+        return urlObj.searchParams.get("v");
+      }
+      // youtu.be/VIDEO_ID
+      if (urlObj.hostname === "youtu.be") {
+        return urlObj.pathname.slice(1);
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Invalid URL:", error);
+    return null;
+  }
+}
+
 // Convert ISO 8601 duration to seconds
 function parseDuration(duration: string): number {
   const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
@@ -96,6 +123,85 @@ function getMockPlaylist(playlistId: string): Playlist {
     url: `https://www.youtube.com/playlist?list=${playlistId}`,
     dateAdded: new Date().toISOString(),
   };
+}
+
+// Fetch single video data from YouTube API
+export async function fetchSingleVideo(url: string): Promise<Playlist> {
+  const videoId = extractVideoId(url);
+
+  if (!videoId) {
+    throw new Error("Invalid YouTube video URL");
+  }
+
+  const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
+
+  if (!apiKey) {
+    console.warn("YouTube API key not found. Using mock data.");
+    return {
+      id: videoId,
+      title: "Demo Video",
+      description:
+        "This is a demo video. Add your YouTube API key to fetch real videos.",
+      thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+      videoCount: 1,
+      videos: [
+        {
+          id: videoId,
+          title: "Demo Video",
+          thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+          duration: "10:00",
+          durationSeconds: 600,
+        },
+      ],
+      url,
+      dateAdded: new Date().toISOString(),
+    };
+  }
+
+  try {
+    // Fetch video details
+    const videoResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${apiKey}`
+    );
+
+    if (!videoResponse.ok) {
+      throw new Error("Failed to fetch video details");
+    }
+
+    const videoData = await videoResponse.json();
+
+    if (!videoData.items || videoData.items.length === 0) {
+      throw new Error("Video not found");
+    }
+
+    const videoInfo = videoData.items[0];
+    const durationSeconds = parseDuration(videoInfo.contentDetails.duration);
+
+    const video: Video = {
+      id: videoId,
+      title: videoInfo.snippet.title,
+      thumbnail:
+        videoInfo.snippet.thumbnails.high?.url ||
+        videoInfo.snippet.thumbnails.default.url,
+      duration: formatDuration(durationSeconds),
+      durationSeconds,
+    };
+
+    // Create a "playlist" with single video
+    return {
+      id: videoId,
+      title: videoInfo.snippet.title,
+      description: videoInfo.snippet.description,
+      thumbnail: video.thumbnail,
+      videoCount: 1,
+      videos: [video],
+      url,
+      dateAdded: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error("Error fetching video:", error);
+    throw error;
+  }
 }
 
 // Fetch playlist data from YouTube API

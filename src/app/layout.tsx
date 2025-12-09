@@ -1,3 +1,4 @@
+import { ReduxProvider } from "@/components/ReduxProvider";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -17,9 +18,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-        <div className="min-h-screen bg-black flex justify-center">
-          <div className="mobile-shell w-full">{children}</div>
-        </div>
+        <ReduxProvider>
+          <div className="min-h-screen bg-black flex justify-center">
+            <div className="mobile-shell w-full">{children}</div>
+          </div>
+        </ReduxProvider>
       </body>
     </html>
   );
