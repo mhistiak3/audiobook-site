@@ -74,13 +74,16 @@ export default function AudioPlayer({
     progressInterval.current = setInterval(() => {
       if (
         playerRef.current &&
-        typeof playerRef.current.getCurrentTime === "function"
+        typeof playerRef.current.getCurrentTime === "function" &&
+        typeof playerRef.current.getDuration === "function"
       ) {
         const currentTime = playerRef.current.getCurrentTime();
-        const duration = playerRef.current.getDuration();
-        if (duration > 0) {
-          setPlayed(currentTime / duration);
-          setDuration(duration);
+        const videoDuration = playerRef.current.getDuration();
+
+        // Only update if we have valid duration
+        if (videoDuration && videoDuration > 0 && !isNaN(videoDuration)) {
+          setPlayed(currentTime / videoDuration);
+          setDuration(videoDuration);
 
           // Save progress to Redux/localStorage every second
           if (currentVideo) {
@@ -88,7 +91,7 @@ export default function AudioPlayer({
               updateVideoProgress({
                 videoId: currentVideo.id,
                 currentTime,
-                duration,
+                duration: videoDuration,
               })
             );
           }
@@ -106,11 +109,15 @@ export default function AudioPlayer({
 
   const onPlayerReady = (event: YouTubeEvent) => {
     playerRef.current = event.target;
+
+    // Get duration immediately and set it
     const videoDuration = event.target.getDuration();
-    setDuration(videoDuration);
+    if (videoDuration && videoDuration > 0) {
+      setDuration(videoDuration);
+    }
 
     // Restore saved position if available
-    if (currentProgress && !hasRestoredPosition.current) {
+    if (currentProgress && !hasRestoredPosition.current && videoDuration > 0) {
       const savedTime = currentProgress.currentTime;
       const savedProgress = savedTime / videoDuration;
       setPlayed(savedProgress);
@@ -212,7 +219,8 @@ export default function AudioPlayer({
             </h4>
             <div className="flex items-center gap-2">
               <p className="text-xs text-gray-400">
-                Audiobook • {isPlayingRedux ? "Playing" : "Paused"}
+                {videos.length === 1 ? "Video" : "Audiobook"} •{" "}
+                {isPlayingRedux ? "Playing" : "Paused"}
               </p>
               {currentProgress?.watched && (
                 <CheckCircle size={12} className="text-green-500" />
@@ -303,8 +311,12 @@ export default function AudioPlayer({
                 />
               </div>
               <div className="flex justify-between text-xs text-gray-400 font-medium">
-                <span>{formatTime(duration * played)}</span>
-                <span>{formatTime(duration)}</span>
+                <span>
+                  {duration > 0 ? formatTime(duration * played) : "00:00"}
+                </span>
+                <span>
+                  {duration > 0 ? formatTime(duration) : currentVideo.duration}
+                </span>
               </div>
             </div>
 

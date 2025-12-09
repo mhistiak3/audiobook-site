@@ -1,9 +1,9 @@
 "use client";
 
 import { Playlist } from "@/lib/types";
-import Link from "next/link";
-import Image from "next/image";
 import { ChevronRight, Music2, Trash2 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 interface PlaylistCardProps {
   playlist: Playlist;
@@ -41,7 +41,9 @@ export default function PlaylistCard({
               {playlist.title}
             </h3>
             <p className="text-[#A7A7A7] text-[13px] truncate-1">
-              Playlist • {playlist.videoCount} tracks
+              {playlist.videoCount === 1
+                ? "Video"
+                : `Playlist • ${playlist.videoCount} tracks`}
             </p>
           </div>
 

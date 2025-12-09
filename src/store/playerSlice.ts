@@ -82,6 +82,13 @@ const playerSlice = createSlice({
       delete state.videoProgress[action.payload];
       saveProgressToStorage(state.videoProgress);
     },
+    clearPlaylistProgress: (state, action: PayloadAction<string[]>) => {
+      // Clear progress for multiple videos (when playlist is deleted)
+      action.payload.forEach((videoId) => {
+        delete state.videoProgress[videoId];
+      });
+      saveProgressToStorage(state.videoProgress);
+    },
     setCurrentVideoIndex: (state, action: PayloadAction<number>) => {
       state.currentVideoIndex = action.payload;
     },
@@ -94,6 +101,7 @@ export const {
   updateVideoProgress,
   markAsWatched,
   clearVideoProgress,
+  clearPlaylistProgress,
   setCurrentVideoIndex,
 } = playerSlice.actions;
 

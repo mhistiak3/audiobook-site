@@ -5,7 +5,7 @@ import ChapterList from "@/components/ChapterList";
 import { storage } from "@/lib/storage";
 import { Playlist } from "@/lib/types";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { setCurrentVideoIndex } from "@/store/playerSlice";
+import { clearVideoProgress, setCurrentVideoIndex } from "@/store/playerSlice";
 import { removeVideoFromPlaylist, setPlaylists } from "@/store/playlistSlice";
 import { ArrowLeft, Clock } from "lucide-react";
 import Image from "next/image";
@@ -47,7 +47,12 @@ export default function PlaylistPage() {
 
   const handleDeleteVideo = (videoId: string) => {
     if (confirm("Remove this chapter from playlist?")) {
+      // Clear video progress from localStorage
+      dispatch(clearVideoProgress(videoId));
+
+      // Remove video from playlist
       dispatch(removeVideoFromPlaylist({ playlistId, videoId }));
+
       // Refresh playlist
       const updated = storage.getPlaylist(playlistId);
       if (updated) {
