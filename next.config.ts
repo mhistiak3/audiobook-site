@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Empty turbopack config to silence the webpack warning
+  turbopack: {},
 };
 
+// PWA configuration will be added via separate plugin after Next.js fixes compatibility
+// For now, the manifest.json and service worker will be manually configured
 export default nextConfig;

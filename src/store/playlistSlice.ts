@@ -1,4 +1,4 @@
-import { storage } from "@/lib/storage";
+import { hybridStorage } from "@/lib/hybridStorage";
 import { Playlist } from "@/lib/types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
@@ -28,11 +28,11 @@ const playlistSlice = createSlice({
       } else {
         state.playlists.unshift(action.payload);
       }
-      storage.savePlaylist(action.payload);
+      hybridStorage.savePlaylist(action.payload);
     },
     deletePlaylist: (state, action: PayloadAction<string>) => {
       state.playlists = state.playlists.filter((p) => p.id !== action.payload);
-      storage.deletePlaylist(action.payload);
+      hybridStorage.deletePlaylist(action.payload);
     },
     removeVideoFromPlaylist: (
       state,
@@ -46,7 +46,10 @@ const playlistSlice = createSlice({
           (v) => v.id !== action.payload.videoId
         );
         playlist.videoCount = playlist.videos.length;
-        storage.removeVideo(action.payload.playlistId, action.payload.videoId);
+        hybridStorage.removeVideo(
+          action.payload.playlistId,
+          action.payload.videoId
+        );
       }
     },
     setCurrentPlaylist: (state, action: PayloadAction<string | null>) => {

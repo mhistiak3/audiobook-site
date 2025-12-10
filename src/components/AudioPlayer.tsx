@@ -85,11 +85,12 @@ export default function AudioPlayer({
           setPlayed(currentTime / videoDuration);
           setDuration(videoDuration);
 
-          // Save progress to Redux/localStorage every second
+          // Save progress to Redux/Supabase every second
           if (currentVideo) {
             dispatch(
               updateVideoProgress({
                 videoId: currentVideo.id,
+                playlistId,
                 currentTime,
                 duration: videoDuration,
               })

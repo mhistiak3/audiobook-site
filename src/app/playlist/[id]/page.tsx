@@ -2,10 +2,14 @@
 
 import AudioPlayer from "@/components/AudioPlayer";
 import ChapterList from "@/components/ChapterList";
-import { storage } from "@/lib/storage";
+import { hybridStorage } from "@/lib/hybridStorage";
 import { Playlist } from "@/lib/types";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { clearVideoProgress, setCurrentVideoIndex } from "@/store/playerSlice";
+import {
+  clearVideoProgress,
+  setCurrentVideoIndex,
+  setVideoProgress,
+} from "@/store/playerSlice";
 import { removeVideoFromPlaylist, setPlaylists } from "@/store/playlistSlice";
 import { ArrowLeft, Clock } from "lucide-react";
 import Image from "next/image";
@@ -24,37 +28,56 @@ export default function PlaylistPage() {
   );
 
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load playlists into Redux if not already loaded
-    if (playlists.length === 0) {
-      dispatch(setPlaylists(storage.getPlaylists()));
-    }
+    const loadData = async () => {
+      setLoading(true);
 
-    const loadedPlaylist = storage.getPlaylist(playlistId);
-    if (!loadedPlaylist) {
-      router.push("/");
-      return;
-    }
-    setPlaylist(loadedPlaylist);
+      // Load playlists into Redux if not already loaded
+      if (playlists.length === 0) {
+        const [playlistsData, progressData] = await Promise.all([
+          hybridStorage.getPlaylists(),
+          hybridStorage.getVideoProgress(),
+        ]);
+        dispatch(setPlaylists(playlistsData));
+        dispatch(setVideoProgress(progressData));
+      }
+
+      const loadedPlaylist = await hybridStorage.getPlaylist(playlistId);
+      if (!loadedPlaylist) {
+        router.push("/");
+        return;
+      }
+      setPlaylist(loadedPlaylist);
+      setLoading(false);
+    };
+
+    loadData();
   }, [playlistId, router, dispatch, playlists.length]);
 
-  if (!playlist) return null;
+  if (loading || !playlist) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-400">Loading...</div>
+      </div>
+    );
+  }
 
   const totalDuration = Math.floor(
     playlist.videos.reduce((acc, v) => acc + v.durationSeconds, 0) / 60
   );
 
-  const handleDeleteVideo = (videoId: string) => {
+  const handleDeleteVideo = async (videoId: string) => {
     if (confirm("Remove this chapter from playlist?")) {
-      // Clear video progress from localStorage
+      // Clear video progress from Supabase
       dispatch(clearVideoProgress(videoId));
 
       // Remove video from playlist
       dispatch(removeVideoFromPlaylist({ playlistId, videoId }));
 
       // Refresh playlist
-      const updated = storage.getPlaylist(playlistId);
+      const updated = await hybridStorage.getPlaylist(playlistId);
       if (updated) {
         setPlaylist(updated);
         // Adjust current index if needed

@@ -1,17 +1,32 @@
-# Audiobook Player
+# 🎧 Audiobook Player
 
-A minimal, modern audiobook player built with Next.js that transforms YouTube playlists into an immersive listening experience.
+A minimal, modern audiobook player built with Next.js that transforms YouTube playlists into an immersive listening experience. Now with **Supabase cloud sync** and **PWA support**!
 
-## Features
+## ✨ Features
 
-- 🎵 **YouTube Playlist Integration** - Load any YouTube playlist by URL
-- 🎧 **Custom Audio Player** - Full-featured player with play/pause, seek, speed control, and volume
-- ⌨️ **Keyboard Controls** - Space for play/pause, arrows for seeking and volume
-- 🌓 **Dark Mode** - Beautiful light and dark themes
-- 💾 **Local Storage** - Your playlists are saved locally for quick access
-- 📱 **Responsive Design** - Works perfectly on desktop, tablet, and mobile
-- ⏭️ **Auto-play Next** - Automatically plays the next chapter when current ends
-- 🎨 **Modern UI** - Clean, minimal design with smooth animations
+### 🔐 New: Cloud Sync & Authentication
+
+- **Supabase Auth** - Secure email/password authentication
+- **Cloud Storage** - Access your library from any device
+- **Progress Sync** - Resume playback on any device
+- **Multi-Device** - Seamless experience everywhere
+
+### 📱 New: Progressive Web App
+
+- **Installable** - Add to home screen on mobile/desktop
+- **Offline Ready** - Service worker caches assets
+- **Standalone Mode** - App-like experience
+- **Auto Updates** - Stay current automatically
+
+### 🎵 Core Features
+
+- **YouTube Integration** - Load playlists and videos by URL
+- **Custom Player** - Full controls (play, pause, seek, speed, volume)
+- **Keyboard Shortcuts** - Space, arrows for quick control
+- **Dark Mode** - Beautiful dark theme
+- **Responsive** - Works on desktop, tablet, mobile
+- **Auto-play** - Automatically plays next chapter
+- **Modern UI** - Clean, minimal design with animations
 
 ## Getting Started
 
@@ -22,29 +37,33 @@ A minimal, modern audiobook player built with Next.js that transforms YouTube pl
 
 ### Installation
 
-1. Clone or download this repository
-
-2. Install dependencies:
+1. **Install dependencies**:
 
 ```bash
 npm install
 ```
 
-3. (Optional) Configure YouTube API Key:
-   - Create a `.env.local` file in the root directory
-   - Add your YouTube Data API key:
-   ```
-   NEXT_PUBLIC_YOUTUBE_API_KEY=your_api_key_here
-   ```
-   - If no API key is provided, the app will use demo data
+2. **Configure environment variables** (`.env.local` already set up):
 
-### Running the Development Server
+```env
+NEXT_PUBLIC_YOUTUBE_API_KEY=your_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your_anon_key
+```
+
+3. **Run database migration** ⚠️ REQUIRED:
+
+   - Open [Supabase Dashboard](https://supabase.com/dashboard)
+   - Go to SQL Editor
+   - Copy & run `supabase/migrations/001_initial_schema.sql`
+
+4. **Start development server**:
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000), sign up, and start listening!
 
 ### Building for Production
 
@@ -82,12 +101,15 @@ npm start
 4. Create credentials (API Key)
 5. Copy the API key to your `.env.local` file
 
-## Technology Stack
+## 🏗️ Technology Stack
 
-- **Next.js 14+** - React framework with App Router
+- **Next.js 16** - React framework with App Router
 - **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first styling
-- **YouTube Data API** - Playlist and video data
+- **Tailwind CSS 4** - Utility-first styling
+- **Supabase** - Authentication & PostgreSQL database
+- **Redux Toolkit** - State management
+- **next-pwa** - Progressive Web App support
+- **YouTube Data API** - Playlist and video metadata
 
 ## Project Structure
 
@@ -113,11 +135,51 @@ src/
     └── useKeyboardControls.ts # Keyboard shortcuts hook
 ```
 
-## Notes
+## 📚 Project Structure
 
-- Audio playback is currently simulated. YouTube doesn't allow direct audio streaming due to their Terms of Service.
-- The YouTube Data API is used to fetch playlist metadata (titles, thumbnails, durations).
-- For production use with real audio, you would need to integrate a service that handles YouTube audio extraction or use your own audio files.
+```
+src/
+├── app/                    # Next.js app router pages
+│   ├── login/             # Login page
+│   ├── signup/            # Signup page
+│   ├── playlist/[id]/     # Playlist player page
+│   └── page.tsx           # Home page
+├── components/            # React components
+├── context/               # Auth context
+├── lib/                   # Utilities and Supabase
+│   ├── supabase/          # Supabase client setup
+│   └── supabaseStorage.ts # Database operations
+└── store/                 # Redux state management
+```
+
+## 🔒 Security
+
+- **Row Level Security (RLS)** - Users can only access their own data
+- **Secure Authentication** - Passwords handled by Supabase Auth
+- **Protected Routes** - Middleware ensures authentication
+- **Environment Variables** - Sensitive keys stored securely
+
+## 🚀 Deployment
+
+### Deploy to Vercel
+
+```bash
+npm run build
+# Push to GitHub and connect to Vercel
+```
+
+### Install as PWA
+
+- **Mobile**: Browser → Share → Add to Home Screen
+- **Desktop**: Address bar → Install icon → Install
+
+## 📝 Notes
+
+- YouTube IFrame API used for video playback (complies with TOS)
+- Progress saves every second during playback
+- Data syncs automatically across devices
+- PWA works offline (but videos require internet)
+- Service worker caches static assets for fast loading
 
 ## License
 

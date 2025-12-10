@@ -1,12 +1,25 @@
+import { PWAInstaller } from "@/components/PWAInstaller";
 import { ReduxProvider } from "@/components/ReduxProvider";
-import type { Metadata } from "next";
+import { AuthProvider } from "@/context/AuthContext";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Audiobook Player",
+  title: "iAudioBook",
   description: "Distraction-free audiobook listening",
-  viewport:
-    "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "iAudioBook",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: "#121212",
 };
 
@@ -17,12 +30,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+      </head>
       <body suppressHydrationWarning>
-        <ReduxProvider>
-          <div className="min-h-screen bg-black flex justify-center">
-            <div className="mobile-shell w-full">{children}</div>
-          </div>
-        </ReduxProvider>
+        <PWAInstaller />
+        <AuthProvider>
+          <ReduxProvider>
+            <div className="min-h-screen bg-black flex justify-center">
+              <div className="mobile-shell w-full">{children}</div>
+            </div>
+          </ReduxProvider>
+        </AuthProvider>
       </body>
     </html>
   );

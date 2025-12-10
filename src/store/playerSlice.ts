@@ -1,4 +1,5 @@
-import { isVideoWatched, safeJSONParse, safeJSONStringify } from "@/lib/utils";
+import { hybridStorage } from "@/lib/hybridStorage";
+import { isVideoWatched } from "@/lib/utils";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface VideoProgress {
@@ -14,25 +15,15 @@ interface PlayerState {
   currentVideoIndex: number;
   isPlaying: boolean;
   videoProgress: Record<string, VideoProgress>; // videoId -> progress
+  currentPlaylistId: string | null;
 }
-
-const PROGRESS_STORAGE_KEY = "audiobook_video_progress";
-
-// Load progress from localStorage
-const loadProgressFromStorage = (): Record<string, VideoProgress> => {
-  return safeJSONParse<Record<string, VideoProgress>>(PROGRESS_STORAGE_KEY, {});
-};
-
-// Save progress to localStorage
-const saveProgressToStorage = (progress: Record<string, VideoProgress>) => {
-  safeJSONStringify(PROGRESS_STORAGE_KEY, progress);
-};
 
 const initialState: PlayerState = {
   currentVideoId: null,
   currentVideoIndex: 0,
   isPlaying: false,
-  videoProgress: loadProgressFromStorage(),
+  videoProgress: {},
+  currentPlaylistId: null,
 };
 
 const playerSlice = createSlice({
@@ -49,15 +40,22 @@ const playerSlice = createSlice({
     setIsPlaying: (state, action: PayloadAction<boolean>) => {
       state.isPlaying = action.payload;
     },
+    setVideoProgress: (
+      state,
+      action: PayloadAction<Record<string, VideoProgress>>
+    ) => {
+      state.videoProgress = action.payload;
+    },
     updateVideoProgress: (
       state,
       action: PayloadAction<{
         videoId: string;
+        playlistId: string;
         currentTime: number;
         duration: number;
       }>
     ) => {
-      const { videoId, currentTime, duration } = action.payload;
+      const { videoId, playlistId, currentTime, duration } = action.payload;
       const watched = isVideoWatched(currentTime, duration);
 
       state.videoProgress[videoId] = {
@@ -68,29 +66,48 @@ const playerSlice = createSlice({
         watched,
       };
 
-      // Save to localStorage
-      saveProgressToStorage(state.videoProgress);
+      // Save to storage
+      hybridStorage.updateVideoProgress(
+        videoId,
+        playlistId,
+        currentTime,
+        duration,
+        watched
+      );
     },
-    markAsWatched: (state, action: PayloadAction<string>) => {
-      const videoId = action.payload;
+    markAsWatched: (
+      state,
+      action: PayloadAction<{ videoId: string; playlistId: string }>
+    ) => {
+      const { videoId, playlistId } = action.payload;
       if (state.videoProgress[videoId]) {
         state.videoProgress[videoId].watched = true;
-        saveProgressToStorage(state.videoProgress);
+        const progress = state.videoProgress[videoId];
+        hybridStorage.updateVideoProgress(
+          videoId,
+          playlistId,
+          progress.currentTime,
+          progress.duration,
+          true
+        );
       }
     },
     clearVideoProgress: (state, action: PayloadAction<string>) => {
       delete state.videoProgress[action.payload];
-      saveProgressToStorage(state.videoProgress);
+      hybridStorage.clearVideoProgress(action.payload);
     },
     clearPlaylistProgress: (state, action: PayloadAction<string[]>) => {
       // Clear progress for multiple videos (when playlist is deleted)
       action.payload.forEach((videoId) => {
         delete state.videoProgress[videoId];
       });
-      saveProgressToStorage(state.videoProgress);
+      hybridStorage.clearPlaylistProgress(action.payload);
     },
     setCurrentVideoIndex: (state, action: PayloadAction<number>) => {
       state.currentVideoIndex = action.payload;
+    },
+    setCurrentPlaylistId: (state, action: PayloadAction<string | null>) => {
+      state.currentPlaylistId = action.payload;
     },
   },
 });
@@ -98,11 +115,13 @@ const playerSlice = createSlice({
 export const {
   setCurrentVideo,
   setIsPlaying,
+  setVideoProgress,
   updateVideoProgress,
   markAsWatched,
   clearVideoProgress,
   clearPlaylistProgress,
   setCurrentVideoIndex,
+  setCurrentPlaylistId,
 } = playerSlice.actions;
 
 export default playerSlice.reducer;
