@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "iAudioBook",
   description: "Distraction-free audiobook listening",
   manifest: "/manifest.json",
+
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -33,6 +34,8 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/logo.png" />
         <link rel="apple-touch-icon" href="/logo.png" />
+        {/* og image */}
+        <meta property="og:image" content="/og_image.png" />
       </head>
       <body suppressHydrationWarning>
         <PWAInstaller />
