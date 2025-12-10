@@ -28,10 +28,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles = {
       primary:
-        "bg-primary text-black hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100",
-      secondary: "bg-secondary text-white hover:bg-border",
-      ghost: "bg-transparent text-white hover:bg-white/10",
-      icon: "bg-black/40 hover:bg-black/60 text-white",
+        "bg-primary text-dark hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100",
+      secondary: "bg-secondary text-foreground hover:bg-border",
+      ghost: "bg-transparent text-foreground hover:bg-light/10",
+      icon: "bg-dark/40 hover:bg-dark/60 text-foreground",
     };
 
     const sizeStyles = {

@@ -37,7 +37,7 @@ export default function PlaylistCard({
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-white font-medium text-[15px] truncate-1 mb-1">
+            <h3 className="text-foreground font-medium text-[15px] truncate-1 mb-1">
               {playlist.title}
             </h3>
             <p className="text-muted text-[13px] truncate-1">
@@ -50,7 +50,7 @@ export default function PlaylistCard({
           {/* Arrow */}
           <ChevronRight
             size={20}
-            className="text-icon group-hover:text-white transition-colors"
+            className="text-icon group-hover:text-foreground transition-colors"
           />
         </div>
       </Link>
@@ -62,7 +62,7 @@ export default function PlaylistCard({
             e.stopPropagation();
             onDelete();
           }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all opacity-0 group-hover:opacity-100"
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-muted-dark hover:text-error hover:bg-error-bg rounded-full transition-all opacity-0 group-hover:opacity-100"
           title="Delete Playlist"
         >
           <Trash2 size={18} />

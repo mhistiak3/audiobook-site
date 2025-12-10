@@ -36,17 +36,14 @@ export default function ChapterList({
               {/* Index or Playing Icon */}
               <div className="w-6 shrink-0 flex items-center justify-center text-muted text-sm font-medium">
                 {isPlaying ? (
-                  <BarChart2
-                    size={16}
-                    className="text-green-500 animate-pulse"
-                  />
+                  <BarChart2 size={16} className="text-primary animate-pulse" />
                 ) : (
                   <span className="group-hover:hidden">{index + 1}</span>
                 )}
                 {!isPlaying && (
                   <Play
                     size={12}
-                    className="hidden group-hover:block text-white fill-white"
+                    className="hidden group-hover:block text-foreground fill-foreground"
                   />
                 )}
               </div>
@@ -62,10 +59,7 @@ export default function ChapterList({
                     {video.title}
                   </h3>
                   {isWatched && (
-                    <CheckCircle
-                      size={16}
-                      className="text-green-500 shrink-0"
-                    />
+                    <CheckCircle size={16} className="text-primary shrink-0" />
                   )}
                 </div>
                 <p className="text-[13px] text-muted">{video.duration}</p>
@@ -78,7 +72,7 @@ export default function ChapterList({
                   e.stopPropagation();
                   onDeleteVideo(video.id);
                 }}
-                className="absolute right-2 p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                className="absolute right-2 p-2 text-muted-dark hover:text-error hover:bg-error-bg rounded-full transition-all opacity-0 group-hover:opacity-100"
                 title="Remove Chapter"
               >
                 <Trash2 size={16} />

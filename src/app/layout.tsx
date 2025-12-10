@@ -41,7 +41,7 @@ export default function RootLayout({
         <PWAInstaller />
         <AuthProvider>
           <ReduxProvider>
-            <div className="min-h-screen bg-black flex justify-center">
+            <div className="min-h-screen bg-background flex justify-center">
               <div className="mobile-shell w-full">{children}</div>
             </div>
           </ReduxProvider>

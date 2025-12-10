@@ -48,13 +48,13 @@ export default function PlaylistInput() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="Paste YouTube Playlist URL"
-            className="w-full bg-secondary text-white pl-12 pr-4 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder-gray-500 text-sm font-medium"
+            className="w-full bg-secondary text-foreground pl-12 pr-4 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all placeholder-muted text-sm font-medium"
             disabled={loading}
           />
         </div>
 
         {error && (
-          <div className="mt-3 p-3 bg-red-900/20 border border-red-900/50 rounded-lg text-red-400 text-xs">
+          <div className="mt-3 p-3 bg-error-bg border border-error-border rounded-lg text-error text-xs">
             {error}
           </div>
         )}

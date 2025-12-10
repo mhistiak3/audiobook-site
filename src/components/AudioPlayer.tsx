@@ -206,9 +206,9 @@ export default function AudioPlayer({
       {!isExpanded && (
         <div
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-[20px] left-0 right-0 mx-auto max-w-[460px] w-[95%] bg-secondary rounded-lg p-2 flex items-center gap-3 shadow-2xl cursor-pointer z-50 border-b-2 border-green-500"
+          className="fixed bottom-[20px] left-0 right-0 mx-auto max-w-[460px] w-[95%] bg-secondary rounded-lg p-2 flex items-center gap-3 shadow-2xl cursor-pointer z-50 border-b-2 border-primary"
         >
-          <div className="relative w-10 h-10 rounded overflow-hidden bg-gray-800 flex-shrink-0">
+          <div className="relative w-10 h-10 rounded overflow-hidden bg-secondary flex-shrink-0">
             <Image
               src={currentVideo.thumbnail}
               alt={currentVideo.title}
@@ -226,7 +226,7 @@ export default function AudioPlayer({
                 {isPlayingRedux ? "Playing" : "Paused"}
               </p>
               {currentProgress?.watched && (
-                <CheckCircle size={12} className="text-green-500" />
+                <CheckCircle size={12} className="text-primary" />
               )}
             </div>
           </div>
@@ -245,10 +245,13 @@ export default function AudioPlayer({
 
       {/* Full Screen Player Overlay */}
       {isExpanded && (
-        <div className="fixed inset-0 z-[60] bg-gradient-to-b from-gray-900 to-black flex flex-col max-w-[480px] mx-auto animate-slideUp">
+        <div className="fixed inset-0 z-[60] bg-linear-to-b from-surface to-background flex flex-col max-w-[480px] mx-auto animate-slideUp">
           {/* Header */}
           <div className="flex items-center justify-between p-6 pt-12">
-            <button onClick={() => setIsExpanded(false)} className="text-white">
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="text-foreground"
+            >
               <span className="sr-only">Close</span>
               <svg
                 width="24"

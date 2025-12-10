@@ -46,8 +46,10 @@ export default function LoginPage() {
               className="rounded-xl"
             />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">iAudioBook</h1>
-          <p className="text-gray-400">Sign in to continue</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">
+            iAudioBook
+          </h1>
+          <p className="text-muted">Sign in to continue</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -88,7 +90,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/50 text-red-500 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-error-bg border border-error-border text-error px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
@@ -96,17 +98,17 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-white text-black font-semibold py-3 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-light text-dark font-semibold py-3 rounded-full hover:bg-light/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-gray-400 text-sm">
+        <p className="mt-6 text-center text-muted text-sm">
           Don&apos;t have an account?{" "}
           <Link
             href="/signup"
-            className="text-white font-semibold hover:underline"
+            className="text-foreground font-semibold hover:underline"
           >
             Sign Up
           </Link>

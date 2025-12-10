@@ -5,6 +5,7 @@
   --color-background: #000000;
   --color-foreground: #ffffff;
   --color-primary: #1db954;
+  --color-primary-hover: #1ed760;
   --color-secondary: #282828;
   --color-dark: #000000;
   --color-light: #ffffff;
@@ -12,8 +13,13 @@
   --color-hover: #1a1a1a;
   --color-border: #404040;
   --color-muted: #a7a7a7;
+  --color-muted-dark: #555555;
   --color-card: #333333;
   --color-icon: #555555;
+  --color-error: #ef4444;
+  --color-error-bg: rgba(239, 68, 68, 0.1);
+  --color-error-border: rgba(239, 68, 68, 0.5);
+  --color-success: #10b981;
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
 
@@ -122,4 +128,20 @@ input[type="range"]::-webkit-slider-runnable-track {
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s ease-out;
 }

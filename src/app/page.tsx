@@ -8,7 +8,7 @@ import { hybridStorage } from "@/lib/hybridStorage";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { clearPlaylistProgress, setVideoProgress } from "@/store/playerSlice";
 import { deletePlaylist, setPlaylists } from "@/store/playlistSlice";
-import { ChevronDown, Library, LogOut } from "lucide-react";
+import { ChevronDown, Download, Library, LogOut } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -16,12 +16,19 @@ import { useEffect, useState } from "react";
 type TabType = "library" | "add-playlist" | "add-video";
 type LibraryFilter = "all" | "playlists" | "videos";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 export default function Home() {
   const dispatch = useAppDispatch();
   const playlists = useAppSelector((state) => state.playlists.playlists);
   const [activeTab, setActiveTab] = useState<TabType>("library");
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("all");
   const [loading, setLoading] = useState(true);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
 
@@ -40,6 +47,24 @@ export default function Home() {
     };
     loadData();
   }, [dispatch, authLoading]);
+
+  useEffect(() => {
+    // Listen for PWA install prompt
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`Install outcome: ${outcome}`);
+    setDeferredPrompt(null);
+  };
 
   const handleDeletePlaylist = (id: string) => {
     if (confirm("Are you sure you want to delete this playlist?")) {
@@ -75,9 +100,18 @@ export default function Home() {
               height={32}
               className="rounded-lg"
             />
-            <h1 className="text-2xl font-bold text-white">iAudioBook</h1>
+            <h1 className="text-2xl font-bold text-foreground">iAudioBook</h1>
           </div>
           <div className="flex items-center gap-3">
+            {deferredPrompt && (
+              <button
+                onClick={handleInstallApp}
+                className="p-2 rounded-full hover:bg-secondary transition-colors"
+                title="Install App"
+              >
+                <Download size={20} className="text-primary" />
+              </button>
+            )}
             {user ? (
               <>
                 <button
@@ -85,16 +119,16 @@ export default function Home() {
                   className="p-2 rounded-full hover:bg-secondary transition-colors"
                   title="Sign Out"
                 >
-                  <LogOut size={20} className="text-gray-400" />
+                  <LogOut size={20} className="text-muted" />
                 </button>
-                <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-black font-bold text-xs">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-dark font-bold text-xs">
                   {user.email?.charAt(0).toUpperCase() || "U"}
                 </div>
               </>
             ) : (
               <button
                 onClick={() => router.push("/login")}
-                className="px-4 py-2 bg-green-500 text-black font-semibold rounded-full hover:bg-green-600 transition-colors text-sm"
+                className="px-4 py-2 bg-primary text-dark font-semibold rounded-full hover:bg-primary-hover transition-colors text-sm"
               >
                 Sign In
               </button>
@@ -141,7 +175,7 @@ export default function Home() {
       <main className="flex-1 px-4">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="text-gray-400">Loading...</div>
+            <div className="text-muted">Loading...</div>
           </div>
         ) : activeTab === "add-playlist" ? (
           <div className="animate-fadeIn py-4">
@@ -175,7 +209,7 @@ export default function Home() {
                       onChange={(e) =>
                         setLibraryFilter(e.target.value as LibraryFilter)
                       }
-                      className="appearance-none bg-secondary text-white px-4 py-2 pr-10 rounded-lg text-sm font-medium cursor-pointer hover:bg-border transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="appearance-none bg-secondary text-white px-4 py-2 pr-10 rounded-lg text-sm font-medium cursor-pointer hover:bg-border transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       <option value="all">
                         All Items ({playlists.length})
@@ -230,7 +264,7 @@ export default function Home() {
                 </p>
                 <button
                   onClick={() => setActiveTab("add-playlist")}
-                  className="px-6 py-3 bg-white text-black rounded-full font-bold text-sm hover:scale-105 transition-transform"
+                  className="px-6 py-3 bg-light text-dark rounded-full font-bold text-sm hover:scale-105 transition-transform"
                 >
                   Get Started
                 </button>
