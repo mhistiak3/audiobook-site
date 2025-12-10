@@ -63,9 +63,9 @@ export default function Home() {
   });
 
   return (
-    <div className="flex flex-col h-full bg-linear-to-b from-[#1a1a1a] to-[#121212] min-h-screen pb-24">
+    <div className="flex flex-col h-full bg-linear-to-b from-hover to-surface min-h-screen pb-24">
       {/* Header */}
-      <header className="pt-[var(--safe-top)] px-6 pb-4 sticky top-0 z-10 bg-[#121212]/90 backdrop-blur-md border-b border-white/5">
+      <header className="pt-[var(--safe-top)] px-6 pb-4 sticky top-0 z-10 bg-surface/90 backdrop-blur-md border-b border-white/5">
         <div className="flex items-center justify-between pt-4">
           <div className="flex items-center gap-3">
             <Image
@@ -175,7 +175,7 @@ export default function Home() {
                       onChange={(e) =>
                         setLibraryFilter(e.target.value as LibraryFilter)
                       }
-                      className="appearance-none bg-secondary text-white px-4 py-2 pr-10 rounded-lg text-sm font-medium cursor-pointer hover:bg-[#404040] transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="appearance-none bg-secondary text-white px-4 py-2 pr-10 rounded-lg text-sm font-medium cursor-pointer hover:bg-border transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       <option value="all">
                         All Items ({playlists.length})
@@ -219,7 +219,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-                <div className="w-16 h-16 bg-[#282828] rounded-full flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mb-4">
                   <Library size={32} className="text-gray-500" />
                 </div>
                 <h3 className="text-white font-bold mb-2">

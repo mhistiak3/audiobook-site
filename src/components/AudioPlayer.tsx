@@ -206,7 +206,7 @@ export default function AudioPlayer({
       {!isExpanded && (
         <div
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-[20px] left-0 right-0 mx-auto max-w-[460px] w-[95%] bg-[#282828] rounded-lg p-2 flex items-center gap-3 shadow-2xl cursor-pointer z-50 border-b-2 border-green-500"
+          className="fixed bottom-[20px] left-0 right-0 mx-auto max-w-[460px] w-[95%] bg-secondary rounded-lg p-2 flex items-center gap-3 shadow-2xl cursor-pointer z-50 border-b-2 border-green-500"
         >
           <div className="relative w-10 h-10 rounded overflow-hidden bg-gray-800 flex-shrink-0">
             <Image

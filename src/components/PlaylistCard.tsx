@@ -17,9 +17,9 @@ export default function PlaylistCard({
   return (
     <div className="group relative">
       <Link href={`/playlist/${playlist.id}`} className="block">
-        <div className="flex items-center gap-4 p-2 rounded-lg hover:bg-[#282828] transition-colors pr-12">
+        <div className="flex items-center gap-4 p-2 rounded-lg hover:bg-secondary transition-colors pr-12">
           {/* Thumbnail */}
-          <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-[#333] shadow-md">
+          <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-card shadow-md">
             {playlist.thumbnail ? (
               <Image
                 src={playlist.thumbnail}
@@ -40,7 +40,7 @@ export default function PlaylistCard({
             <h3 className="text-white font-medium text-[15px] truncate-1 mb-1">
               {playlist.title}
             </h3>
-            <p className="text-[#A7A7A7] text-[13px] truncate-1">
+            <p className="text-muted text-[13px] truncate-1">
               {playlist.videoCount === 1
                 ? "Video"
                 : `Playlist • ${playlist.videoCount} tracks`}
@@ -50,7 +50,7 @@ export default function PlaylistCard({
           {/* Arrow */}
           <ChevronRight
             size={20}
-            className="text-[#555] group-hover:text-white transition-colors"
+            className="text-icon group-hover:text-white transition-colors"
           />
         </div>
       </Link>

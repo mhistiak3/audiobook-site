@@ -30,11 +30,11 @@ export default function ChapterList({
             <button
               onClick={() => onVideoSelect(index)}
               className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left pr-12 ${
-                isPlaying ? "bg-secondary" : "hover:bg-[#1a1a1a]"
+                isPlaying ? "bg-secondary" : "hover:bg-hover"
               }`}
             >
               {/* Index or Playing Icon */}
-              <div className="w-6 shrink-0 flex items-center justify-center text-[#A7A7A7] text-sm font-medium">
+              <div className="w-6 shrink-0 flex items-center justify-center text-muted text-sm font-medium">
                 {isPlaying ? (
                   <BarChart2
                     size={16}
@@ -68,7 +68,7 @@ export default function ChapterList({
                     />
                   )}
                 </div>
-                <p className="text-[13px] text-[#A7A7A7]">{video.duration}</p>
+                <p className="text-[13px] text-muted">{video.duration}</p>
               </div>
             </button>
 

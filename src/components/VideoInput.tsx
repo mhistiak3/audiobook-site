@@ -48,7 +48,7 @@ export default function VideoInput() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="Paste YouTube Video URL"
-            className="w-full bg-[#282828] text-white pl-12 pr-4 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder-gray-500 text-sm font-medium"
+            className="w-full bg-secondary text-white pl-12 pr-4 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder-gray-500 text-sm font-medium"
             disabled={loading}
           />
         </div>
@@ -62,7 +62,7 @@ export default function VideoInput() {
         <button
           type="submit"
           disabled={loading || !url.trim()}
-          className="mt-4 w-full bg-[#1DB954] text-black font-bold py-4 rounded-full hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
+          className="mt-4 w-full bg-primary text-black font-bold py-4 rounded-full hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
         >
           {loading ? (
             <Loader2 size={20} className="animate-spin" />

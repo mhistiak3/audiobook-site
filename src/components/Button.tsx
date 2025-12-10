@@ -28,8 +28,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles = {
       primary:
-        "bg-[#1DB954] text-black hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100",
-      secondary: "bg-secondary text-white hover:bg-[#404040]",
+        "bg-primary text-black hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100",
+      secondary: "bg-secondary text-white hover:bg-border",
       ghost: "bg-transparent text-white hover:bg-white/10",
       icon: "bg-black/40 hover:bg-black/60 text-white",
     };

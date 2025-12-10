@@ -50,7 +50,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-[#1a1a1a] to-surface flex items-center justify-center px-6">
+    <div className="min-h-screen bg-linear-to-b from-hover to-surface flex items-center justify-center px-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
