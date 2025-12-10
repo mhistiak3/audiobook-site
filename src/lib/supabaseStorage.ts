@@ -233,7 +233,7 @@ export const supabaseStorage = {
     (progress || []).forEach((p) => {
       progressMap[p.video_id] = {
         videoId: p.video_id,
-        currentTime: p.current_time,
+        currentTime: p.progress_time,
         duration: p.duration,
         lastPlayed: p.last_played,
         watched: p.watched,
@@ -269,7 +269,7 @@ export const supabaseStorage = {
       await supabase
         .from("video_progress")
         .update({
-          current_time: currentTime,
+          progress_time: currentTime,
           duration,
           watched,
           last_played: new Date().toISOString(),
@@ -281,7 +281,7 @@ export const supabaseStorage = {
         user_id: user.user.id,
         video_id: videoId,
         playlist_id: playlistId,
-        current_time: currentTime,
+        progress_time: currentTime,
         duration,
         watched,
         last_played: new Date().toISOString(),

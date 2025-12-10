@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -36,7 +37,16 @@ export default function LoginPage() {
     <div className="min-h-screen bg-linear-to-b from-[#1a1a1a] to-surface flex items-center justify-center px-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Audiobook</h1>
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/logo.png"
+              alt="iAudioBook Logo"
+              width={80}
+              height={80}
+              className="rounded-xl"
+            />
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-2">iAudioBook</h1>
           <p className="text-gray-400">Sign in to continue</p>
         </div>
 

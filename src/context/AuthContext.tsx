@@ -1,5 +1,6 @@
 "use client";
 
+import { hybridStorage } from "@/lib/hybridStorage";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
@@ -46,6 +47,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!error) {
+      // Sync localStorage data to Supabase after successful login
+      try {
+        await hybridStorage.syncLocalToSupabase();
+      } catch (syncError) {
+        console.error("Error syncing data to Supabase:", syncError);
+      }
+
       router.push("/");
       router.refresh();
     }
@@ -68,6 +76,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // Sync Supabase data to localStorage before logout
+    try {
+      await hybridStorage.syncSupabaseToLocal();
+    } catch (syncError) {
+      console.error("Error syncing data to localStorage:", syncError);
+    }
+
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();

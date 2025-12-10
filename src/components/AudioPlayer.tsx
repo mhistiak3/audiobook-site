@@ -59,13 +59,11 @@ export default function AudioPlayer({
       );
       hasRestoredPosition.current = false;
 
-      // If there's saved progress, we'll restore it in onPlayerReady
-      if (!currentProgress) {
-        setPlayed(0);
-      }
+      // Reset played and duration - these will be set correctly in onPlayerReady
+      setPlayed(0);
       setDuration(0);
     }
-  }, [currentVideo, currentVideoIndex, dispatch, currentProgress]);
+  }, [currentVideo, currentVideoIndex, dispatch]);
 
   if (!currentVideo) return null;
 
@@ -115,15 +113,19 @@ export default function AudioPlayer({
     const videoDuration = event.target.getDuration();
     if (videoDuration && videoDuration > 0) {
       setDuration(videoDuration);
-    }
 
-    // Restore saved position if available
-    if (currentProgress && !hasRestoredPosition.current && videoDuration > 0) {
-      const savedTime = currentProgress.currentTime;
-      const savedProgress = savedTime / videoDuration;
-      setPlayed(savedProgress);
-      event.target.seekTo(savedTime, true);
-      hasRestoredPosition.current = true;
+      // Restore saved position if available and not already restored
+      if (currentProgress && !hasRestoredPosition.current) {
+        const savedTime = currentProgress.currentTime || 0;
+
+        // Only restore if there's meaningful progress (more than 1 second)
+        if (savedTime > 1) {
+          const savedProgress = savedTime / videoDuration;
+          setPlayed(savedProgress);
+          event.target.seekTo(savedTime, true);
+        }
+        hasRestoredPosition.current = true;
+      }
     }
 
     if (isPlayingRedux) {

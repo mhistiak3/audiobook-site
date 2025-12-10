@@ -262,7 +262,7 @@ export const hybridStorage = {
     (progress || []).forEach((p) => {
       progressMap[p.video_id] = {
         videoId: p.video_id,
-        currentTime: p.current_time,
+        currentTime: p.progress_time,
         duration: p.duration,
         lastPlayed: p.last_played,
         watched: p.watched,
@@ -317,7 +317,7 @@ export const hybridStorage = {
       await supabase
         .from("video_progress")
         .update({
-          current_time: currentTime,
+          progress_time: currentTime,
           duration,
           watched,
           last_played: new Date().toISOString(),
@@ -328,7 +328,7 @@ export const hybridStorage = {
         user_id: user.id,
         video_id: videoId,
         playlist_id: playlistId,
-        current_time: currentTime,
+        progress_time: currentTime,
         duration,
         watched,
         last_played: new Date().toISOString(),
@@ -388,5 +388,111 @@ export const hybridStorage = {
       .delete()
       .in("video_id", videoIds)
       .eq("user_id", user.id);
+  },
+
+  // Sync localStorage data to Supabase (called on login)
+  syncLocalToSupabase: async (): Promise<void> => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    // Get localStorage data
+    const localPlaylists = storage.getPlaylists();
+
+    // Get video progress from localStorage
+    let localProgress: Record<
+      string,
+      {
+        playlistId: string;
+        currentTime: number;
+        duration: number;
+        watched: boolean;
+        lastPlayed: string;
+      }
+    > = {};
+
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("audiobook_video_progress");
+        if (stored) {
+          localProgress = JSON.parse(stored);
+        }
+      } catch (error) {
+        console.error("Error reading localStorage progress:", error);
+      }
+    }
+
+    // Save playlists to Supabase
+    for (const playlist of localPlaylists) {
+      await supabase.from("playlists").upsert({
+        id: playlist.id,
+        user_id: user.id,
+        title: playlist.title,
+        description: playlist.description,
+        thumbnail: playlist.thumbnail,
+        video_count: playlist.videoCount,
+        url: playlist.url,
+        date_added: playlist.dateAdded,
+      });
+
+      // Save videos for this playlist
+      for (const video of playlist.videos) {
+        await supabase.from("videos").upsert({
+          id: video.id,
+          playlist_id: playlist.id,
+          user_id: user.id,
+          title: video.title,
+          thumbnail: video.thumbnail,
+          duration: video.duration,
+          duration_seconds: video.durationSeconds,
+        });
+      }
+    }
+
+    // Save video progress to Supabase
+    const progressEntries = Object.entries(localProgress);
+    for (const [videoId, progress] of progressEntries) {
+      await supabase.from("video_progress").upsert({
+        user_id: user.id,
+        video_id: videoId,
+        playlist_id: progress.playlistId,
+        progress_time: progress.currentTime,
+        duration: progress.duration,
+        watched: progress.watched,
+        last_played: progress.lastPlayed,
+      });
+    }
+  },
+
+  // Sync Supabase data to localStorage (called on logout)
+  syncSupabaseToLocal: async (): Promise<void> => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    // Get all playlists from Supabase
+    const supabasePlaylists = await hybridStorage.getPlaylists();
+
+    // Save to localStorage
+    supabasePlaylists.forEach((playlist) => {
+      storage.savePlaylist(playlist);
+    });
+
+    // Get all video progress from Supabase
+    const supabaseProgress = await hybridStorage.getVideoProgress();
+
+    // Save to localStorage
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "audiobook_video_progress",
+        JSON.stringify(supabaseProgress)
+      );
+    }
   },
 };
