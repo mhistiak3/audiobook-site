@@ -22,7 +22,9 @@ export function extractPlaylistId(url: string): string | null {
 // Extract video ID from YouTube URL
 export function extractVideoId(url: string): string | null {
   try {
-    const urlObj = new URL(url);
+    // Remove any query parameters like ?si= from youtu.be URLs
+    const cleanUrl = url.split("?")[0].split("&")[0];
+    const urlObj = new URL(cleanUrl);
 
     // Handle different YouTube URL formats
     if (
@@ -31,11 +33,13 @@ export function extractVideoId(url: string): string | null {
     ) {
       // youtube.com/watch?v=VIDEO_ID
       if (urlObj.pathname === "/watch") {
-        return urlObj.searchParams.get("v");
+        const videoId = new URL(url).searchParams.get("v");
+        return videoId;
       }
       // youtu.be/VIDEO_ID
       if (urlObj.hostname === "youtu.be") {
-        return urlObj.pathname.slice(1);
+        const videoId = urlObj.pathname.slice(1);
+        return videoId;
       }
     }
 
@@ -161,20 +165,40 @@ export async function fetchSingleVideo(url: string): Promise<Playlist> {
   try {
     // Fetch video details
     const videoResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${apiKey}`
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,status&id=${videoId}&key=${apiKey}`
     );
 
     if (!videoResponse.ok) {
-      throw new Error("Failed to fetch video details");
+      const errorData = await videoResponse.json().catch(() => ({}));
+      console.error("YouTube API error:", errorData);
+      throw new Error(
+        errorData.error?.message || "Failed to fetch video details"
+      );
     }
 
     const videoData = await videoResponse.json();
 
     if (!videoData.items || videoData.items.length === 0) {
-      throw new Error("Video not found");
+      throw new Error("Video not found or is private/unavailable");
     }
 
     const videoInfo = videoData.items[0];
+
+    // Check if video is embeddable
+    if (videoInfo.status?.embeddable === false) {
+      throw new Error(
+        "This video cannot be embedded. The creator has disabled embedding."
+      );
+    }
+
+    // Check if video is private or deleted
+    if (
+      videoInfo.status?.privacyStatus === "private" ||
+      videoInfo.status?.privacyStatus === "privacyStatusUnspecified"
+    ) {
+      throw new Error("This video is private or unavailable");
+    }
+
     const durationSeconds = parseDuration(videoInfo.contentDetails.duration);
 
     const video: Video = {
@@ -257,7 +281,10 @@ export async function fetchPlaylist(url: string): Promise<Playlist> {
 
       // Get video IDs to fetch durations
       const videoIds = itemsData.items
-        .map((item: any) => item.snippet.resourceId.videoId)
+        .map(
+          (item: { snippet: { resourceId: { videoId: string } } }) =>
+            item.snippet.resourceId.videoId
+        )
         .join(",");
 
       // Fetch video details for durations
@@ -268,23 +295,34 @@ export async function fetchPlaylist(url: string): Promise<Playlist> {
       const videosData = await videosResponse.json();
 
       // Map videos with duration
-      itemsData.items.forEach((item: any, index: number) => {
-        const videoId = item.snippet.resourceId.videoId;
-        const videoDetails = videosData.items[index];
-        const durationSeconds = parseDuration(
-          videoDetails.contentDetails.duration
-        );
+      itemsData.items.forEach(
+        (
+          item: {
+            snippet: {
+              resourceId: { videoId: string };
+              title: string;
+              thumbnails: { high?: { url: string }; default: { url: string } };
+            };
+          },
+          index: number
+        ) => {
+          const videoId = item.snippet.resourceId.videoId;
+          const videoDetails = videosData.items[index];
+          const durationSeconds = parseDuration(
+            videoDetails.contentDetails.duration
+          );
 
-        videos.push({
-          id: videoId,
-          title: item.snippet.title,
-          thumbnail:
-            item.snippet.thumbnails.high?.url ||
-            item.snippet.thumbnails.default.url,
-          duration: formatDuration(durationSeconds),
-          durationSeconds,
-        });
-      });
+          videos.push({
+            id: videoId,
+            title: item.snippet.title,
+            thumbnail:
+              item.snippet.thumbnails.high?.url ||
+              item.snippet.thumbnails.default.url,
+            duration: formatDuration(durationSeconds),
+            durationSeconds,
+          });
+        }
+      );
 
       nextPageToken = itemsData.nextPageToken;
     } while (nextPageToken);

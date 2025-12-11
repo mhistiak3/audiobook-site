@@ -425,9 +425,12 @@ export const hybridStorage = {
       }
     }
 
-    // Save playlists to Supabase
-    for (const playlist of localPlaylists) {
-      await supabase.from("playlists").upsert({
+    // Batch all operations together for better performance
+    const syncOperations = [];
+
+    // Prepare all playlist upserts
+    if (localPlaylists.length > 0) {
+      const playlistData = localPlaylists.map((playlist) => ({
         id: playlist.id,
         user_id: user.id,
         title: playlist.title,
@@ -436,11 +439,13 @@ export const hybridStorage = {
         video_count: playlist.videoCount,
         url: playlist.url,
         date_added: playlist.dateAdded,
-      });
+      }));
 
-      // Save videos for this playlist
-      for (const video of playlist.videos) {
-        await supabase.from("videos").upsert({
+      syncOperations.push(supabase.from("playlists").upsert(playlistData));
+
+      // Prepare all video upserts
+      const allVideos = localPlaylists.flatMap((playlist) =>
+        playlist.videos.map((video) => ({
           id: video.id,
           playlist_id: playlist.id,
           user_id: user.id,
@@ -448,14 +453,18 @@ export const hybridStorage = {
           thumbnail: video.thumbnail,
           duration: video.duration,
           duration_seconds: video.durationSeconds,
-        });
+        }))
+      );
+
+      if (allVideos.length > 0) {
+        syncOperations.push(supabase.from("videos").upsert(allVideos));
       }
     }
 
-    // Save video progress to Supabase
+    // Prepare all video progress upserts
     const progressEntries = Object.entries(localProgress);
-    for (const [videoId, progress] of progressEntries) {
-      await supabase.from("video_progress").upsert({
+    if (progressEntries.length > 0) {
+      const progressData = progressEntries.map(([videoId, progress]) => ({
         user_id: user.id,
         video_id: videoId,
         playlist_id: progress.playlistId,
@@ -463,8 +472,13 @@ export const hybridStorage = {
         duration: progress.duration,
         watched: progress.watched,
         last_played: progress.lastPlayed,
-      });
+      }));
+
+      syncOperations.push(supabase.from("video_progress").upsert(progressData));
     }
+
+    // Execute all operations in parallel
+    await Promise.all(syncOperations);
   },
 
   // Sync Supabase data to localStorage (called on logout)

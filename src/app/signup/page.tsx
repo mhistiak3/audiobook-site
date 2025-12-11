@@ -46,6 +46,9 @@ export default function SignUpPage() {
     } else {
       setSuccess(true);
       setLoading(false);
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
     }
   };
 

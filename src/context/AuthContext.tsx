@@ -47,36 +47,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!error) {
-      // Sync localStorage data to Supabase after successful login
-      try {
-        await hybridStorage.syncLocalToSupabase();
-      } catch (syncError) {
-        console.error("Error syncing data to Supabase:", syncError);
-      }
-
+      // Redirect immediately for better UX
       router.push("/");
       router.refresh();
+
+      // Sync localStorage data to Supabase in background
+      hybridStorage.syncLocalToSupabase().catch((syncError) => {
+        console.error("Error syncing data to Supabase:", syncError);
+      });
     }
 
     return { error };
   };
 
   const signUp = async (email: string, password: string) => {
-    const redirectUrl = typeof window !== 'undefined' 
-      ? `${window.location.origin}/`
-      : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000/';
-    
+    // Get the correct redirect URL
+    const redirectUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:3000");
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl,
+        emailRedirectTo: `${redirectUrl}/`,
       },
     });
 
     if (!error) {
-      router.push("/");
-      router.refresh();
+      return { error: null };
     }
 
     return { error };
