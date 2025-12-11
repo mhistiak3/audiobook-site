@@ -78,7 +78,7 @@ export function PWAInstaller() {
           <h3 className="text-dark font-bold text-sm mb-1">
             Install iAudioBook
           </h3>
-          <p className="text-foreground text-xs">
+          <p className="text-foreground! text-xs">
             Add to home screen for a better experience
           </p>
         </div>
