@@ -10,8 +10,12 @@ import {
   setCurrentVideoIndex,
   setVideoProgress,
 } from "@/store/playerSlice";
-import { removeVideoFromPlaylist, setPlaylists } from "@/store/playlistSlice";
-import { ArrowLeft, Clock } from "lucide-react";
+import {
+  deletePlaylist,
+  removeVideoFromPlaylist,
+  setPlaylists,
+} from "@/store/playlistSlice";
+import { ArrowLeft, Clock, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -94,11 +98,30 @@ export default function PlaylistPage() {
     dispatch(setCurrentVideoIndex(index));
   };
 
+  const handleDeletePlaylist = async () => {
+    if (
+      confirm(
+        "Are you sure you want to delete this playlist? All progress will be lost."
+      )
+    ) {
+      // Clear progress for all videos
+      playlist.videos.forEach((video) => {
+        dispatch(clearVideoProgress(video.id));
+      });
+
+      // Delete playlist
+      dispatch(deletePlaylist(playlistId));
+
+      // Redirect to home
+      router.push("/");
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-surface pb-24">
       {/* Header with Back Button */}
       <header className="pt-[var(--safe-top)] px-4 pb-4 sticky top-0 z-10 bg-surface/95 backdrop-blur-md border-b border-white/5">
-        <div className="flex items-center gap-4 pt-4">
+        <div className="flex items-center gap-3 pt-4">
           <button
             onClick={() => router.push("/")}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 transition-colors"
@@ -109,6 +132,14 @@ export default function PlaylistPage() {
           <h1 className="text-lg font-bold text-white truncate flex-1">
             {playlist.title}
           </h1>
+          <button
+            onClick={handleDeletePlaylist}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-error/20 hover:text-error transition-colors text-white"
+            aria-label="Delete playlist"
+            title="Delete playlist"
+          >
+            <Trash2 size={20} />
+          </button>
         </div>
       </header>
 
