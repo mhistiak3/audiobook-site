@@ -27,3 +27,12 @@ export interface PlayerState {
   playbackRate: number;
   currentVideoIndex: number;
 }
+
+export interface Bookmark {
+  id: string;
+  videoId: string;
+  playlistId: string;
+  time: number; // seconds
+  note?: string;
+  timestamp: string; // ISO date string
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Video } from "@/lib/types";
+import { Bookmark as BookmarkType, Video } from "@/lib/types";
 import { formatTime } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
@@ -8,10 +8,21 @@ import {
   setIsPlaying,
   updateVideoProgress,
 } from "@/store/playerSlice";
-import { CheckCircle, Pause, Play, SkipBack, SkipForward } from "lucide-react";
+import {
+  Bookmark,
+  BookmarkCheck,
+  CheckCircle,
+  Gauge,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+  X,
+} from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import YouTube, { YouTubeEvent, YouTubePlayer } from "react-youtube";
+import SleepTimer from "./SleepTimer";
 
 interface AudioPlayerProps {
   videos: Video[];
@@ -33,6 +44,10 @@ export default function AudioPlayer({
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [showBookmarkMenu, setShowBookmarkMenu] = useState(false);
+  const [bookmarkNote, setBookmarkNote] = useState("");
   const playerRef = useRef<YouTubePlayer | null>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
   const hasRestoredPosition = useRef(false);
@@ -44,6 +59,12 @@ export default function AudioPlayer({
 
   // Clear interval on unmount
   useEffect(() => {
+    // Load saved playback speed
+    const savedSpeed = localStorage.getItem("defaultPlaybackSpeed");
+    if (savedSpeed) {
+      setPlaybackSpeed(parseFloat(savedSpeed));
+    }
+
     return () => {
       if (progressInterval.current) {
         clearInterval(progressInterval.current);
@@ -179,6 +200,43 @@ export default function AudioPlayer({
     }
   };
 
+  const handleSpeedChange = (speed: number) => {
+    setPlaybackSpeed(speed);
+    if (playerRef.current) {
+      playerRef.current.setPlaybackRate(speed);
+    }
+    setShowSpeedMenu(false);
+  };
+
+  const saveBookmark = () => {
+    if (!currentVideo || duration === 0) return;
+
+    const bookmark: BookmarkType = {
+      id: Date.now().toString(),
+      videoId: currentVideo.id,
+      playlistId: playlistId,
+      time: played * duration,
+      note: bookmarkNote.trim() || undefined,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Save to localStorage
+    try {
+      const saved = localStorage.getItem("audiobook_bookmarks");
+      const bookmarks = saved ? JSON.parse(saved) : [];
+      bookmarks.push(bookmark);
+      localStorage.setItem("audiobook_bookmarks", JSON.stringify(bookmarks));
+      setShowBookmarkMenu(false);
+      setBookmarkNote("");
+      // Show success feedback
+      alert("Bookmark saved!");
+    } catch (error) {
+      console.error("Failed to save bookmark:", error);
+    }
+  };
+
+  const speedOptions = [0.75, 1, 1.25, 1.5, 1.75, 2];
+
   return (
     <>
       {/* Hidden Player for Logic */}
@@ -206,9 +264,9 @@ export default function AudioPlayer({
       {!isExpanded && (
         <div
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-[20px] left-0 right-0 mx-auto max-w-[460px] w-[95%] bg-secondary rounded-lg p-2 flex items-center gap-3 shadow-2xl cursor-pointer z-50 border-b-2 border-primary"
+          className="fixed bottom-5 left-0 right-0 mx-auto max-w-[460px] w-[95%] bg-secondary rounded-lg p-2 flex items-center gap-3 shadow-2xl cursor-pointer z-50 border-b-2 border-primary"
         >
-          <div className="relative w-10 h-10 rounded overflow-hidden bg-secondary flex-shrink-0">
+          <div className="relative w-10 h-10 rounded overflow-hidden bg-secondary shrink-0">
             <Image
               src={currentVideo.thumbnail}
               alt={currentVideo.title}
@@ -245,7 +303,7 @@ export default function AudioPlayer({
 
       {/* Full Screen Player Overlay */}
       {isExpanded && (
-        <div className="fixed inset-0 z-[60] bg-linear-to-b from-surface to-background flex flex-col max-w-[480px] mx-auto animate-slideUp">
+        <div className="fixed inset-0 z-60 bg-linear-to-b from-surface to-background flex flex-col max-w-[480px] mx-auto animate-slideUp">
           {/* Header */}
           <div className="flex items-center justify-between p-6 pt-12">
             <button
@@ -269,9 +327,27 @@ export default function AudioPlayer({
             <span className="text-xs font-bold tracking-widest uppercase text-gray-400">
               Now Playing
             </span>
-            <button className="text-white opacity-0">
-              <span className="sr-only">Menu</span>•••
-            </button>
+            <div className="flex items-center gap-2">
+              <SleepTimer
+                currentVideoDuration={duration}
+                currentVideoTime={played * duration}
+                onFinishChapter={handleNext}
+              />
+              <button
+                onClick={() => setShowSpeedMenu(true)}
+                className="text-muted hover:text-white hover:bg-hover p-2 rounded-full transition-colors"
+                title="Playback Speed"
+              >
+                <Gauge size={20} />
+              </button>
+              <button
+                onClick={() => setShowBookmarkMenu(true)}
+                className="text-muted hover:text-white hover:bg-hover p-2 rounded-full transition-colors"
+                title="Add Bookmark"
+              >
+                <Bookmark size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Album Art */}
@@ -351,6 +427,102 @@ export default function AudioPlayer({
                 className="text-gray-300 hover:text-white transition-colors"
               >
                 <SkipForward size={32} />
+              </button>
+            </div>
+
+            {/* Speed Indicator */}
+            <div className="flex items-center justify-center gap-2 text-sm text-muted">
+              <Gauge size={16} />
+              <span>{playbackSpeed}x Speed</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Speed Control Modal */}
+      {showSpeedMenu && (
+        <div
+          className="fixed inset-0 z-70 flex items-end justify-center bg-black/70 animate-fadeIn"
+          onClick={() => setShowSpeedMenu(false)}
+        >
+          <div
+            className="w-full max-w-[480px] bg-secondary rounded-t-3xl p-6 pb-[calc(var(--safe-bottom)+1.5rem)] animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold">Playback Speed</h3>
+              <button
+                onClick={() => setShowSpeedMenu(false)}
+                className="text-muted hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {speedOptions.map((speed) => (
+                <button
+                  key={speed}
+                  onClick={() => handleSpeedChange(speed)}
+                  className={`px-4 py-4 rounded-xl font-semibold text-lg transition-all ${
+                    playbackSpeed === speed
+                      ? "bg-primary text-black"
+                      : "bg-hover text-white hover:bg-hover/80 border border-white/5"
+                  }`}
+                >
+                  {speed}x
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bookmark Modal */}
+      {showBookmarkMenu && (
+        <div
+          className="fixed inset-0 z-70 flex items-end justify-center bg-black/70 animate-fadeIn"
+          onClick={() => setShowBookmarkMenu(false)}
+        >
+          <div
+            className="w-full max-w-[480px] bg-secondary rounded-t-3xl p-6 pb-[calc(var(--safe-bottom)+1.5rem)] animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold">Add Bookmark</h3>
+              <button
+                onClick={() => setShowBookmarkMenu(false)}
+                className="text-muted hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-muted block mb-2">
+                  Time: {formatTime(played * duration)}
+                </label>
+                <div className="bg-hover rounded-lg px-4 py-3 text-white">
+                  {currentVideo.title}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-muted block mb-2">
+                  Note (Optional)
+                </label>
+                <textarea
+                  value={bookmarkNote}
+                  onChange={(e) => setBookmarkNote(e.target.value)}
+                  placeholder="Add a note about this moment..."
+                  className="w-full bg-hover rounded-lg px-4 py-3 text-white placeholder-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                  rows={3}
+                />
+              </div>
+              <button
+                onClick={saveBookmark}
+                className="w-full bg-primary hover:bg-primary-hover text-black font-semibold py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                <BookmarkCheck size={20} />
+                Save Bookmark
               </button>
             </div>
           </div>

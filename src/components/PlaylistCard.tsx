@@ -1,9 +1,11 @@
 "use client";
 
 import { Playlist } from "@/lib/types";
+import { useAppSelector } from "@/store/hooks";
 import { ChevronRight, Music2, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo } from "react";
 
 interface PlaylistCardProps {
   playlist: Playlist;
@@ -14,12 +16,28 @@ export default function PlaylistCard({
   playlist,
   onDelete,
 }: PlaylistCardProps) {
+  const videoProgress = useAppSelector((state) => state.player.videoProgress);
+
+  // Calculate playlist progress
+  const playlistProgress = useMemo(() => {
+    if (playlist.videoCount === 0) return 0;
+
+    const completedCount = playlist.videos.filter((video) => {
+      const progress = videoProgress[video.id];
+      return progress?.watched;
+    }).length;
+
+    return (completedCount / playlist.videoCount) * 100;
+  }, [playlist, videoProgress]);
+
+  const hasProgress = playlistProgress > 0;
+
   return (
     <div className="group relative">
       <Link href={`/playlist/${playlist.id}`} className="block">
         <div className="flex items-center gap-4 p-2 rounded-lg hover:bg-secondary transition-colors pr-12">
           {/* Thumbnail */}
-          <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-card shadow-md">
+          <div className="relative w-16 h-16 shrink-0 rounded-md overflow-hidden bg-card shadow-md">
             {playlist.thumbnail ? (
               <Image
                 src={playlist.thumbnail}
@@ -40,11 +58,19 @@ export default function PlaylistCard({
             <h3 className="text-foreground font-medium text-[15px] truncate-1 mb-1">
               {playlist.title}
             </h3>
-            <p className="text-muted text-[13px] truncate-1">
+            <p className="text-muted text-[13px] truncate-1 mb-1">
               {playlist.videoCount === 1
                 ? "Video"
                 : `Playlist • ${playlist.videoCount} tracks`}
             </p>
+            {hasProgress && (
+              <div className="w-full bg-hover rounded-full h-1 overflow-hidden">
+                <div
+                  className="bg-primary h-full rounded-full transition-all"
+                  style={{ width: `${playlistProgress}%` }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Arrow */}

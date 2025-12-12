@@ -1,3 +1,4 @@
+import Navigation from "@/components/Navigation";
 import { PWAInstaller } from "@/components/PWAInstaller";
 import { ReduxProvider } from "@/components/ReduxProvider";
 import { AuthProvider } from "@/context/AuthContext";
@@ -42,7 +43,10 @@ export default function RootLayout({
         <AuthProvider>
           <ReduxProvider>
             <div className="min-h-screen bg-background flex justify-center">
-              <div className="mobile-shell w-full">{children}</div>
+              <div className="mobile-shell w-full">
+                {children}
+                <Navigation />
+              </div>
             </div>
           </ReduxProvider>
         </AuthProvider>

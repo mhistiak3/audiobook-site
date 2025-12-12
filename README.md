@@ -4,7 +4,16 @@ A minimal, modern audiobook player built with Next.js that transforms YouTube pl
 
 ## ✨ Features
 
-### 🔐 New: Cloud Sync & Authentication
+### 🎯 New Features (December 2025)
+
+- **Sleep Timer** ⏰ - Set automatic playback stop with presets (15/30/45/60 min) or end of chapter
+- **Playback Speed Control** 🎚️ - Quick speed presets (0.75x - 2x) with memory across sessions
+- **Bookmarks & Notes** 📌 - Save timestamped moments with optional notes, synced to cloud
+- **Continue Listening** 🔄 - Quick access to recently played audiobooks with progress
+- **Statistics Dashboard** 📊 - Track listening time, completed chapters, and achievements
+- **Enhanced Navigation** 🧭 - Bottom navigation with dedicated pages for all features
+
+### 🔐 Cloud Sync & Authentication
 
 - **Supabase Auth** - Secure email/password authentication
 - **Cloud Storage** - Access your library from any device

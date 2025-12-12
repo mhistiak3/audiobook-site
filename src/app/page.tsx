@@ -5,13 +5,14 @@ import PlaylistInput from "@/components/PlaylistInput";
 import VideoInput from "@/components/VideoInput";
 import { useAuth } from "@/context/AuthContext";
 import { hybridStorage } from "@/lib/hybridStorage";
+import { Playlist } from "@/lib/types";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { clearPlaylistProgress, setVideoProgress } from "@/store/playerSlice";
 import { deletePlaylist, setPlaylists } from "@/store/playlistSlice";
-import { ChevronDown, Download, Library, LogOut } from "lucide-react";
+import { ChevronDown, Download, Library, LogOut, Play } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type TabType = "library" | "add-playlist" | "add-video";
 type LibraryFilter = "all" | "playlists" | "videos";
@@ -24,6 +25,7 @@ interface BeforeInstallPromptEvent extends Event {
 export default function Home() {
   const dispatch = useAppDispatch();
   const playlists = useAppSelector((state) => state.playlists.playlists);
+  const videoProgress = useAppSelector((state) => state.player.videoProgress);
   const [activeTab, setActiveTab] = useState<TabType>("library");
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("all");
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,47 @@ export default function Home() {
     useState<BeforeInstallPromptEvent | null>(null);
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
+
+  // Calculate continue listening items
+  const continueListening = useMemo(() => {
+    const progressArray = Object.values(videoProgress);
+
+    // Get items with progress but not completed
+    const inProgress = progressArray
+      .filter((p) => !p.watched && p.currentTime > 5) // At least 5 seconds played
+      .sort(
+        (a, b) =>
+          new Date(b.lastPlayed).getTime() - new Date(a.lastPlayed).getTime()
+      )
+      .slice(0, 5); // Top 5 most recent
+
+    // Match with playlists
+    return inProgress
+      .map((progress) => {
+        const playlist = playlists.find((p) =>
+          p.videos.some((v) => v.id === progress.videoId)
+        );
+        if (!playlist) return null;
+
+        const video = playlist.videos.find((v) => v.id === progress.videoId);
+        const videoIndex = playlist.videos.findIndex(
+          (v) => v.id === progress.videoId
+        );
+
+        return {
+          playlist,
+          video,
+          videoIndex,
+          progress,
+        };
+      })
+      .filter(Boolean) as Array<{
+      playlist: Playlist;
+      video: any;
+      videoIndex: number;
+      progress: any;
+    }>;
+  }, [playlists, videoProgress]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -201,6 +244,65 @@ export default function Home() {
           <div className="animate-fadeIn py-2">
             {playlists.length > 0 ? (
               <>
+                {/* Continue Listening Section */}
+                {continueListening.length > 0 && (
+                  <div className="mb-6 px-2">
+                    <h2 className="text-lg font-bold text-white mb-3">
+                      Continue Listening
+                    </h2>
+                    <div className="space-y-2">
+                      {continueListening.map((item) => {
+                        const progressPercentage = item.progress.duration
+                          ? (item.progress.currentTime /
+                              item.progress.duration) *
+                            100
+                          : 0;
+
+                        return (
+                          <div
+                            key={item.progress.videoId}
+                            onClick={() =>
+                              router.push(
+                                `/playlist/${item.playlist.id}?video=${item.video.id}`
+                              )
+                            }
+                            className="bg-secondary rounded-xl p-3 flex items-center gap-3 hover:bg-hover transition-all cursor-pointer border border-white/5 hover:border-primary/30"
+                          >
+                            <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-hover">
+                              <Image
+                                src={item.video.thumbnail}
+                                alt={item.video.title}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm text-white truncate mb-1">
+                                {item.video.title}
+                              </h4>
+                              <p className="text-xs text-muted mb-2 truncate">
+                                {item.playlist.title}
+                              </p>
+                              <div className="w-full bg-hover rounded-full h-1.5 overflow-hidden">
+                                <div
+                                  className="bg-primary h-full rounded-full transition-all"
+                                  style={{ width: `${progressPercentage}%` }}
+                                />
+                              </div>
+                            </div>
+                            <button className="w-10 h-10 flex items-center justify-center bg-primary rounded-full hover:scale-110 transition-transform shrink-0">
+                              <Play
+                                size={16}
+                                className="text-black fill-black ml-0.5"
+                              />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Filter Dropdown */}
                 <div className="mb-4 px-2">
                   <div className="relative inline-block">

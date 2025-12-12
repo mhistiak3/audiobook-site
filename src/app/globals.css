@@ -21,6 +21,8 @@
   --color-error-border: rgba(239, 68, 68, 0.5);
   --color-success: #10b981;
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --z-60: 60;
+  --z-70: 70;
 }
 
 :root {
@@ -142,6 +144,34 @@ input[type="range"]::-webkit-slider-runnable-track {
   }
 }
 
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .animate-slideDown {
   animation: slideDown 0.3s ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
 }
