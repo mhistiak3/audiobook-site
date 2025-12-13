@@ -15,6 +15,8 @@ import {
   Gauge,
   Pause,
   Play,
+  RotateCcw,
+  RotateCw,
   SkipBack,
   SkipForward,
   X,
@@ -43,11 +45,22 @@ export default function AudioPlayer({
 
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [playbackSpeed, setPlaybackSpeed] = useState(() => {
+    const savedSpeed = localStorage.getItem("defaultPlaybackSpeed");
+    return savedSpeed ? parseFloat(savedSpeed) : 1;
+  });
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showBookmarkMenu, setShowBookmarkMenu] = useState(false);
   const [bookmarkNote, setBookmarkNote] = useState("");
+  const [skipBackward, setSkipBackward] = useState(() => {
+    const saved = localStorage.getItem("skipBackwardSeconds");
+    return saved ? parseInt(saved) : 10;
+  });
+  const [skipForward, setSkipForward] = useState(() => {
+    const saved = localStorage.getItem("skipForwardSeconds");
+    return saved ? parseInt(saved) : 30;
+  });
+  const [isExpanded, setIsExpanded] = useState(false);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
   const hasRestoredPosition = useRef(false);
@@ -59,12 +72,6 @@ export default function AudioPlayer({
 
   // Clear interval on unmount
   useEffect(() => {
-    // Load saved playback speed
-    const savedSpeed = localStorage.getItem("defaultPlaybackSpeed");
-    if (savedSpeed) {
-      setPlaybackSpeed(parseFloat(savedSpeed));
-    }
-
     return () => {
       if (progressInterval.current) {
         clearInterval(progressInterval.current);
@@ -79,10 +86,6 @@ export default function AudioPlayer({
         setCurrentVideo({ videoId: currentVideo.id, index: currentVideoIndex })
       );
       hasRestoredPosition.current = false;
-
-      // Reset played and duration - these will be set correctly in onPlayerReady
-      setPlayed(0);
-      setDuration(0);
     }
   }, [currentVideo, currentVideoIndex, dispatch]);
 
@@ -186,6 +189,13 @@ export default function AudioPlayer({
     }
   };
 
+  const handlePrev = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (currentVideoIndex > 0) {
+      onVideoChange(currentVideoIndex - 1);
+    }
+  };
+
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (currentVideoIndex < videos.length - 1) {
@@ -193,10 +203,23 @@ export default function AudioPlayer({
     }
   };
 
-  const handlePrev = (e?: React.MouseEvent) => {
+  const handleSkipBackward = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (currentVideoIndex > 0) {
-      onVideoChange(currentVideoIndex - 1);
+    if (playerRef.current && duration > 0) {
+      const currentTime = playerRef.current.getCurrentTime();
+      const newTime = Math.max(0, currentTime - skipBackward);
+      playerRef.current.seekTo(newTime, true);
+      setPlayed(newTime / duration);
+    }
+  };
+
+  const handleSkipForward = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (playerRef.current && duration > 0) {
+      const currentTime = playerRef.current.getCurrentTime();
+      const newTime = Math.min(duration, currentTime + skipForward);
+      playerRef.current.seekTo(newTime, true);
+      setPlayed(newTime / duration);
     }
   };
 
@@ -288,16 +311,32 @@ export default function AudioPlayer({
               )}
             </div>
           </div>
-          <button
-            onClick={handlePlayPause}
-            className="w-10 h-10 flex items-center justify-center text-white hover:scale-110 transition-transform"
-          >
-            {isPlayingRedux ? (
-              <Pause size={24} fill="white" />
-            ) : (
-              <Play size={24} fill="white" />
-            )}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleSkipBackward}
+              className="w-8 h-8 flex items-center justify-center text-white hover:scale-110 transition-transform"
+              title={`Skip backward ${skipBackward}s`}
+            >
+              <RotateCcw size={18} />
+            </button>
+            <button
+              onClick={handlePlayPause}
+              className="w-10 h-10 flex items-center justify-center text-white hover:scale-110 transition-transform"
+            >
+              {isPlayingRedux ? (
+                <Pause size={24} fill="white" />
+              ) : (
+                <Play size={24} fill="white" />
+              )}
+            </button>
+            <button
+              onClick={handleSkipForward}
+              className="w-8 h-8 flex items-center justify-center text-white hover:scale-110 transition-transform"
+              title={`Skip forward ${skipForward}s`}
+            >
+              <RotateCw size={18} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -427,6 +466,24 @@ export default function AudioPlayer({
                 className="text-gray-300 hover:text-white transition-colors"
               >
                 <SkipForward size={32} />
+              </button>
+            </div>
+
+            {/* Skip Controls */}
+            <div className="flex items-center justify-center gap-6">
+              <button
+                onClick={handleSkipBackward}
+                className="flex flex-col items-center gap-1 text-gray-300 hover:text-white transition-colors"
+              >
+                <RotateCcw size={24} />
+                <span className="text-xs">{skipBackward}s</span>
+              </button>
+              <button
+                onClick={handleSkipForward}
+                className="flex flex-col items-center gap-1 text-gray-300 hover:text-white transition-colors"
+              >
+                <RotateCw size={24} />
+                <span className="text-xs">{skipForward}s</span>
               </button>
             </div>
 

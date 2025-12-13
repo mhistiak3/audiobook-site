@@ -2,7 +2,7 @@
 
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { useAuth } from "@/context/AuthContext";
-import { LogOut, User, Zap } from "lucide-react";
+import { LogOut, RotateCcw, RotateCw, User, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -16,6 +16,20 @@ export default function SettingsPage() {
     }
     return 1;
   });
+  const [skipBackward, setSkipBackward] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("skipBackwardSeconds");
+      return saved ? parseInt(saved) : 10;
+    }
+    return 10;
+  });
+  const [skipForward, setSkipForward] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("skipForwardSeconds");
+      return saved ? parseInt(saved) : 30;
+    }
+    return 30;
+  });
   const mounted = true;
 
   useEffect(() => {
@@ -27,6 +41,16 @@ export default function SettingsPage() {
   const handleSpeedChange = (speed: number) => {
     setDefaultSpeed(speed);
     localStorage.setItem("defaultPlaybackSpeed", speed.toString());
+  };
+
+  const handleSkipBackwardChange = (seconds: number) => {
+    setSkipBackward(seconds);
+    localStorage.setItem("skipBackwardSeconds", seconds.toString());
+  };
+
+  const handleSkipForwardChange = (seconds: number) => {
+    setSkipForward(seconds);
+    localStorage.setItem("skipForwardSeconds", seconds.toString());
   };
 
   const handleSignOut = async () => {
@@ -45,6 +69,7 @@ export default function SettingsPage() {
   }
 
   const speedOptions = [0.75, 1, 1.25, 1.5, 1.75, 2];
+  const skipOptions = [5, 10, 15, 30, 45, 60];
 
   return (
     <div className="min-h-screen bg-linear-to-b from-hover to-surface pb-24">
@@ -104,6 +129,52 @@ export default function SettingsPage() {
           </p>
         </div>
 
+        {/* Skip Intervals */}
+        <div className="bg-secondary rounded-xl p-5 border border-white/5">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <RotateCcw size={20} className="text-primary" />
+            Skip Backward Interval
+          </h3>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {skipOptions.map((seconds) => (
+              <button
+                key={`back-${seconds}`}
+                onClick={() => handleSkipBackwardChange(seconds)}
+                className={`px-4 py-3 rounded-lg font-medium text-sm transition-all ${
+                  skipBackward === seconds
+                    ? "bg-primary text-black"
+                    : "bg-hover text-white hover:bg-hover/80"
+                }`}
+              >
+                {seconds}s
+              </button>
+            ))}
+          </div>
+
+          <h3 className="font-semibold mb-4 flex items-center gap-2 mt-6">
+            <RotateCw size={20} className="text-primary" />
+            Skip Forward Interval
+          </h3>
+          <div className="grid grid-cols-3 gap-2">
+            {skipOptions.map((seconds) => (
+              <button
+                key={`forward-${seconds}`}
+                onClick={() => handleSkipForwardChange(seconds)}
+                className={`px-4 py-3 rounded-lg font-medium text-sm transition-all ${
+                  skipForward === seconds
+                    ? "bg-primary text-black"
+                    : "bg-hover text-white hover:bg-hover/80"
+                }`}
+              >
+                {seconds}s
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted mt-3">
+            Customize how many seconds to skip when using skip buttons
+          </p>
+        </div>
+
         {/* Theme Settings */}
         <div className="bg-secondary rounded-xl p-5 border border-white/5">
           <h3 className="font-semibold mb-4">Appearance</h3>
@@ -124,7 +195,7 @@ export default function SettingsPage() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted">Version</span>
-              <span className="font-medium">1.0.0</span>
+              <span className="font-medium">1.2.0</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted">App Name</span>
