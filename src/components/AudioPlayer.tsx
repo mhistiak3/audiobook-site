@@ -166,7 +166,21 @@ export default function AudioPlayer({
       dispatch(setIsPlaying(false));
       stopProgressTracking();
     } else if (event.data === 0) {
-      handleNext();
+      // Video ended - check auto-play setting
+      const autoPlayNext = localStorage.getItem("autoPlayNext") || "next";
+
+      if (autoPlayNext === "next") {
+        handleNext();
+      } else if (autoPlayNext === "repeat") {
+        // Replay current video
+        if (playerRef.current) {
+          playerRef.current.seekTo(0, true);
+          playerRef.current.playVideo();
+        }
+      } else if (autoPlayNext === "stop") {
+        // Just stop playing
+        dispatch(setIsPlaying(false));
+      }
     }
   };
 

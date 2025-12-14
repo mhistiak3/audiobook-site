@@ -2,7 +2,14 @@
 
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { useAuth } from "@/context/AuthContext";
-import { LogOut, RotateCcw, RotateCw, User, Zap } from "lucide-react";
+import {
+  LogOut,
+  PlayCircle,
+  RotateCcw,
+  RotateCw,
+  User,
+  Zap,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -30,6 +37,13 @@ export default function SettingsPage() {
     }
     return 30;
   });
+  const [autoPlayNext, setAutoPlayNext] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("autoPlayNext");
+      return saved || "next"; // Options: "next", "stop", "repeat"
+    }
+    return "next";
+  });
   const mounted = true;
 
   useEffect(() => {
@@ -51,6 +65,11 @@ export default function SettingsPage() {
   const handleSkipForwardChange = (seconds: number) => {
     setSkipForward(seconds);
     localStorage.setItem("skipForwardSeconds", seconds.toString());
+  };
+
+  const handleAutoPlayNextChange = (option: string) => {
+    setAutoPlayNext(option);
+    localStorage.setItem("autoPlayNext", option);
   };
 
   const handleSignOut = async () => {
@@ -173,6 +192,55 @@ export default function SettingsPage() {
           <p className="text-xs text-muted mt-3">
             Customize how many seconds to skip when using skip buttons
           </p>
+        </div>
+
+        {/* Auto-play Next */}
+        <div className="bg-secondary rounded-xl p-5 border border-white/5">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <PlayCircle size={20} className="text-primary" />
+            After Video Completes
+          </h3>
+          <div className="space-y-2">
+            <button
+              onClick={() => handleAutoPlayNextChange("next")}
+              className={`w-full px-4 py-4 rounded-lg font-medium text-sm transition-all text-left ${
+                autoPlayNext === "next"
+                  ? "bg-primary text-black"
+                  : "bg-hover text-white hover:bg-hover/80"
+              }`}
+            >
+              <div className="font-semibold">Play Next Video</div>
+              <div className="text-xs opacity-80 mt-1">
+                Automatically continue to the next chapter
+              </div>
+            </button>
+            <button
+              onClick={() => handleAutoPlayNextChange("stop")}
+              className={`w-full px-4 py-4 rounded-lg font-medium text-sm transition-all text-left ${
+                autoPlayNext === "stop"
+                  ? "bg-primary text-black"
+                  : "bg-hover text-white hover:bg-hover/80"
+              }`}
+            >
+              <div className="font-semibold">Stop Playing</div>
+              <div className="text-xs opacity-80 mt-1">
+                Pause after current video ends
+              </div>
+            </button>
+            <button
+              onClick={() => handleAutoPlayNextChange("repeat")}
+              className={`w-full px-4 py-4 rounded-lg font-medium text-sm transition-all text-left ${
+                autoPlayNext === "repeat"
+                  ? "bg-primary text-black"
+                  : "bg-hover text-white hover:bg-hover/80"
+              }`}
+            >
+              <div className="font-semibold">Repeat Current Video</div>
+              <div className="text-xs opacity-80 mt-1">
+                Loop the current chapter continuously
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Theme Settings */}
