@@ -19,6 +19,8 @@ import {
   RotateCw,
   SkipBack,
   SkipForward,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import Image from "next/image";
@@ -48,6 +50,20 @@ export default function AudioPlayer({
   const [playbackSpeed, setPlaybackSpeed] = useState(() => {
     const savedSpeed = localStorage.getItem("defaultPlaybackSpeed");
     return savedSpeed ? parseFloat(savedSpeed) : 1;
+  });
+  const [volume, setVolume] = useState(() => {
+    if (typeof window !== "undefined") {
+      const savedVolume = localStorage.getItem("playerVolume");
+      return savedVolume ? parseInt(savedVolume) : 100;
+    }
+    return 100;
+  });
+  const [isMuted, setIsMuted] = useState(() => {
+    if (typeof window !== "undefined") {
+      const savedMuted = localStorage.getItem("playerMuted");
+      return savedMuted === "true";
+    }
+    return false;
   });
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showBookmarkMenu, setShowBookmarkMenu] = useState(false);
@@ -132,6 +148,14 @@ export default function AudioPlayer({
 
   const onPlayerReady = (event: YouTubeEvent) => {
     playerRef.current = event.target;
+
+    // Set volume and mute state
+    if (isMuted) {
+      event.target.mute();
+    } else {
+      event.target.unMute();
+      event.target.setVolume(volume);
+    }
 
     // Get duration immediately and set it
     const videoDuration = event.target.getDuration();
@@ -270,6 +294,34 @@ export default function AudioPlayer({
     } catch (error) {
       console.error("Failed to save bookmark:", error);
     }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseInt(e.target.value);
+    setVolume(newVolume);
+    if (playerRef.current) {
+      playerRef.current.setVolume(newVolume);
+      if (newVolume > 0 && isMuted) {
+        setIsMuted(false);
+        playerRef.current.unMute();
+        localStorage.setItem("playerMuted", "false");
+      }
+    }
+    localStorage.setItem("playerVolume", newVolume.toString());
+  };
+
+  const handleToggleMute = () => {
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+    if (playerRef.current) {
+      if (newMuted) {
+        playerRef.current.mute();
+      } else {
+        playerRef.current.unMute();
+        playerRef.current.setVolume(volume);
+      }
+    }
+    localStorage.setItem("playerMuted", newMuted.toString());
   };
 
   const speedOptions = [0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -481,6 +533,40 @@ export default function AudioPlayer({
               >
                 <SkipForward size={32} />
               </button>
+            </div>
+
+            {/* Volume Control */}
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleToggleMute}
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
+                  {isMuted || volume === 0 ? (
+                    <VolumeX size={20} />
+                  ) : (
+                    <Volume2 size={20} />
+                  )}
+                </button>
+                <div className="flex-1 relative h-2 bg-gray-600/50 rounded-full overflow-hidden">
+                  <div
+                    className="absolute top-0 left-0 h-full bg-white rounded-full transition-all"
+                    style={{ width: `${isMuted ? 0 : volume}%` }}
+                  />
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={isMuted ? 0 : volume}
+                    onChange={handleVolumeChange}
+                    className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                </div>
+                <span className="text-xs text-gray-400 w-8 text-right">
+                  {isMuted ? 0 : volume}
+                </span>
+              </div>
             </div>
 
             {/* Skip Controls */}

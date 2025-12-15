@@ -21,6 +21,7 @@ export default function SleepTimer({
   const [timeLeft, setTimeLeft] = useState(0); // in seconds
   const [isActive, setIsActive] = useState(false);
   const [fadeOutStarted, setFadeOutStarted] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState("");
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -94,6 +95,14 @@ export default function SleepTimer({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handleCustomTimer = () => {
+    const minutes = parseInt(customMinutes);
+    if (minutes > 0 && minutes <= 999) {
+      startTimer(minutes * 60);
+      setCustomMinutes("");
+    }
   };
 
   return (
@@ -179,6 +188,30 @@ export default function SleepTimer({
                       {preset.label}
                     </button>
                   ))}
+                </div>
+
+                <div className="mt-4">
+                  <label className="text-sm text-muted block mb-2">
+                    Custom Time (minutes)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="999"
+                      value={customMinutes}
+                      onChange={(e) => setCustomMinutes(e.target.value)}
+                      placeholder="Enter minutes"
+                      className="flex-1 bg-hover rounded-lg px-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <button
+                      onClick={handleCustomTimer}
+                      disabled={!customMinutes || parseInt(customMinutes) <= 0}
+                      className="bg-primary hover:bg-primary-hover text-black font-semibold px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Set
+                    </button>
+                  </div>
                 </div>
 
                 {currentVideoDuration > 0 && onFinishChapter && (
