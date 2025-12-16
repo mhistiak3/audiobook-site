@@ -324,6 +324,46 @@ export default function AudioPlayer({
     localStorage.setItem("playerMuted", newMuted.toString());
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input or textarea
+      if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      switch (e.key) {
+        case " ":
+        case "k":
+        case "K":
+          e.preventDefault(); // Prevent scrolling
+          handlePlayPause();
+          break;
+        case "ArrowLeft":
+          handleSkipBackward();
+          break;
+        case "ArrowRight":
+          handleSkipForward();
+          break;
+        case "m":
+        case "M":
+          handleToggleMute();
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    handlePlayPause,
+    handleSkipBackward,
+    handleSkipForward,
+    handleToggleMute,
+  ]);
+
   const speedOptions = [0.75, 1, 1.25, 1.5, 1.75, 2];
 
   return (
