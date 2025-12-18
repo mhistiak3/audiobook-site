@@ -2,6 +2,7 @@
 
 import AudioPlayer from "@/components/AudioPlayer";
 import ChapterList from "@/components/ChapterList";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { hybridStorage } from "@/lib/hybridStorage";
 import { Playlist } from "@/lib/types";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -33,6 +34,11 @@ export default function PlaylistPage() {
 
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleteVideoDialog, setDeleteVideoDialog] = useState<{
+    isOpen: boolean;
+    videoId: string | null;
+  }>({ isOpen: false, videoId: null });
+  const [deletePlaylistDialog, setDeletePlaylistDialog] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -72,49 +78,53 @@ export default function PlaylistPage() {
     playlist.videos.reduce((acc, v) => acc + v.durationSeconds, 0) / 60
   );
 
-  const handleDeleteVideo = async (videoId: string) => {
-    if (confirm("Remove this chapter from playlist?")) {
-      // Clear video progress from Supabase
-      dispatch(clearVideoProgress(videoId));
+  const handleDeleteVideo = (videoId: string) => {
+    setDeleteVideoDialog({ isOpen: true, videoId });
+  };
 
-      // Remove video from playlist
-      dispatch(removeVideoFromPlaylist({ playlistId, videoId }));
+  const confirmDeleteVideo = async () => {
+    if (!deleteVideoDialog.videoId) return;
 
-      // Refresh playlist
-      const updated = await hybridStorage.getPlaylist(playlistId);
-      if (updated) {
-        setPlaylist(updated);
-        // Adjust current index if needed
-        if (currentVideoIndex >= updated.videos.length) {
-          dispatch(
-            setCurrentVideoIndex(Math.max(0, updated.videos.length - 1))
-          );
-        }
+    // Clear video progress from Supabase
+    dispatch(clearVideoProgress(deleteVideoDialog.videoId));
+
+    // Remove video from playlist
+    dispatch(removeVideoFromPlaylist({ playlistId, videoId: deleteVideoDialog.videoId }));
+
+    // Refresh playlist
+    const updated = await hybridStorage.getPlaylist(playlistId);
+    if (updated) {
+      setPlaylist(updated);
+      // Adjust current index if needed
+      if (currentVideoIndex >= updated.videos.length) {
+        dispatch(
+          setCurrentVideoIndex(Math.max(0, updated.videos.length - 1))
+        );
       }
     }
+
+    setDeleteVideoDialog({ isOpen: false, videoId: null });
   };
 
   const handleVideoSelect = (index: number) => {
     dispatch(setCurrentVideoIndex(index));
   };
 
-  const handleDeletePlaylist = async () => {
-    if (
-      confirm(
-        "Are you sure you want to delete this playlist? All progress will be lost."
-      )
-    ) {
-      // Clear progress for all videos
-      playlist.videos.forEach((video) => {
-        dispatch(clearVideoProgress(video.id));
-      });
+  const handleDeletePlaylist = () => {
+    setDeletePlaylistDialog(true);
+  };
 
-      // Delete playlist
-      dispatch(deletePlaylist(playlistId));
+  const confirmDeletePlaylist = async () => {
+    // Clear progress for all videos
+    playlist.videos.forEach((video) => {
+      dispatch(clearVideoProgress(video.id));
+    });
 
-      // Redirect to home
-      router.push("/");
-    }
+    // Delete playlist
+    dispatch(deletePlaylist(playlistId));
+
+    // Redirect to home
+    router.push("/");
   };
 
   return (
@@ -188,6 +198,30 @@ export default function PlaylistPage() {
         currentVideoIndex={currentVideoIndex}
         onVideoChange={handleVideoSelect}
         playlistId={playlistId}
+      />
+
+      {/* Confirm Delete Video Dialog */}
+      <ConfirmDialog
+        isOpen={deleteVideoDialog.isOpen}
+        title="Remove Video"
+        message="Are you sure you want to remove this video from the playlist?"
+        confirmText="Remove"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={confirmDeleteVideo}
+        onCancel={() => setDeleteVideoDialog({ isOpen: false, videoId: null })}
+      />
+
+      {/* Confirm Delete Playlist Dialog */}
+      <ConfirmDialog
+        isOpen={deletePlaylistDialog}
+        title="Delete Playlist"
+        message="Are you sure you want to delete this playlist? All progress will be lost."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={confirmDeletePlaylist}
+        onCancel={() => setDeletePlaylistDialog(false)}
       />
     </div>
   );

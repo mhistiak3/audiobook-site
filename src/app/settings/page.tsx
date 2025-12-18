@@ -1,5 +1,6 @@
 "use client";
 
+import ConfirmDialog from "@/components/ConfirmDialog";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -44,7 +45,7 @@ export default function SettingsPage() {
     }
     return "next";
   });
-  const mounted = true;
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -73,13 +74,16 @@ export default function SettingsPage() {
   };
 
   const handleSignOut = async () => {
-    if (confirm("Are you sure you want to sign out?")) {
-      await signOut();
-      router.push("/login");
-    }
+    setShowSignOutDialog(true);
   };
 
-  if (!mounted || authLoading) {
+  const confirmSignOut = async () => {
+    await signOut();
+    router.push("/login");
+    setShowSignOutDialog(false);
+  };
+
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-surface">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
@@ -272,6 +276,17 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Confirm Sign Out Dialog */}
+      <ConfirmDialog
+        isOpen={showSignOutDialog}
+        title="Sign Out"
+        message="Are you sure you want to sign out?"
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        onConfirm={confirmSignOut}
+        onCancel={() => setShowSignOutDialog(false)}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import ConfirmDialog from "@/components/ConfirmDialog";
 import PlaylistCard from "@/components/PlaylistCard";
 import PlaylistInput from "@/components/PlaylistInput";
 import VideoInput from "@/components/VideoInput";
@@ -33,6 +34,10 @@ export default function Home() {
     useState<BeforeInstallPromptEvent | null>(null);
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    playlistId: string | null;
+  }>({ isOpen: false, playlistId: null });
 
   // Calculate continue listening items
   const continueListening = useMemo(() => {
@@ -110,16 +115,20 @@ export default function Home() {
   };
 
   const handleDeletePlaylist = (id: string) => {
-    if (confirm("Are you sure you want to delete this playlist?")) {
-      // Get video IDs before deleting
-      const playlist = playlists.find((p) => p.id === id);
+    setDeleteDialog({ isOpen: true, playlistId: id });
+  };
+
+  const confirmDeletePlaylist = () => {
+    if (deleteDialog.playlistId) {
+      const playlist = playlists.find((p) => p.id === deleteDialog.playlistId);
       if (playlist) {
         const videoIds = playlist.videos.map((v) => v.id);
         // Clear progress for all videos in the playlist
         dispatch(clearPlaylistProgress(videoIds));
       }
-      dispatch(deletePlaylist(id));
+      dispatch(deletePlaylist(deleteDialog.playlistId));
     }
+    setDeleteDialog({ isOpen: false, playlistId: null });
   };
 
   // Filter playlists based on selected filter
@@ -375,6 +384,18 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        title="Delete Playlist"
+        message="Are you sure you want to delete this playlist?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={confirmDeletePlaylist}
+        onCancel={() => setDeleteDialog({ isOpen: false, playlistId: null })}
+      />
     </div>
   );
 }

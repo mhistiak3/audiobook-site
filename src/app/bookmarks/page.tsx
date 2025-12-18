@@ -1,5 +1,6 @@
 "use client";
 
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { Bookmark as BookmarkType } from "@/lib/types";
 import { useAppSelector } from "@/store/hooks";
@@ -12,7 +13,10 @@ export default function BookmarksPage() {
   const router = useRouter();
   const playlists = useAppSelector((state) => state.playlists.playlists);
   const [bookmarks, setBookmarks] = useState<BookmarkType[]>([]);
-  const mounted = true;
+  const [deleteBookmarkDialog, setDeleteBookmarkDialog] = useState<{
+    isOpen: boolean;
+    bookmarkId: string | null;
+  }>({ isOpen: false, bookmarkId: null });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -40,17 +44,20 @@ export default function BookmarksPage() {
       }
     };
 
-    if (mounted) {
-      loadBookmarks();
-    }
-  }, [mounted]);
+    loadBookmarks();
+  }, []);
 
-  const deleteBookmark = (id: string) => {
-    if (confirm("Delete this bookmark?")) {
-      const updated = bookmarks.filter((b) => b.id !== id);
-      setBookmarks(updated);
-      localStorage.setItem("audiobook_bookmarks", JSON.stringify(updated));
-    }
+  const handleDeleteBookmark = (id: string) => {
+    setDeleteBookmarkDialog({ isOpen: true, bookmarkId: id });
+  };
+
+  const confirmDeleteBookmark = () => {
+    if (!deleteBookmarkDialog.bookmarkId) return;
+
+    const updated = bookmarks.filter((b) => b.id !== deleteBookmarkDialog.bookmarkId);
+    setBookmarks(updated);
+    localStorage.setItem("audiobook_bookmarks", JSON.stringify(updated));
+    setDeleteBookmarkDialog({ isOpen: false, bookmarkId: null });
   };
 
   const formatTime = (seconds: number) => {
@@ -81,7 +88,7 @@ export default function BookmarksPage() {
     }
   };
 
-  if (!mounted || authLoading) {
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-surface">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
@@ -141,7 +148,7 @@ export default function BookmarksPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteBookmark(bookmark.id);
+                      handleDeleteBookmark(bookmark.id);
                     }}
                     className="text-muted hover:text-error transition-colors p-2"
                   >
@@ -153,6 +160,18 @@ export default function BookmarksPage() {
           </div>
         )}
       </div>
+
+      {/* Confirm Delete Bookmark Dialog */}
+      <ConfirmDialog
+        isOpen={deleteBookmarkDialog.isOpen}
+        title="Delete Bookmark"
+        message="Delete this bookmark?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={confirmDeleteBookmark}
+        onCancel={() => setDeleteBookmarkDialog({ isOpen: false, bookmarkId: null })}
+      />
     </div>
   );
 }
