@@ -26,15 +26,13 @@ export function PWAInstaller() {
         });
     }
 
-    // Check if user has seen the banner before
-    const hasSeenBanner = localStorage.getItem("pwa-banner-seen");
-
     // Listen for the beforeinstallprompt event
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
 
-      // Show banner only if user hasn't seen it before
+      // Check localStorage every time the event fires to see if banner was dismissed
+      const hasSeenBanner = localStorage.getItem("pwa-banner-seen");
       if (!hasSeenBanner) {
         setShowBanner(true);
       }

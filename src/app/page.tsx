@@ -1,5 +1,6 @@
 "use client";
 
+import ApiKeyPrompt from "@/components/ApiKeyPrompt";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PlaylistCard from "@/components/PlaylistCard";
 import PlaylistInput from "@/components/PlaylistInput";
@@ -141,6 +142,9 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-full bg-linear-to-b from-hover to-surface min-h-screen pb-24">
+      {/* API Key Prompt Banner */}
+      <ApiKeyPrompt />
+
       {/* Header */}
       <header className="pt-[var(--safe-top)] px-6 pb-4 sticky top-0 z-10 bg-surface/90 backdrop-blur-md border-b border-white/5">
         <div className="flex items-center justify-between pt-4">

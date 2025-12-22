@@ -1,5 +1,6 @@
 // YouTube Data API integration
 
+import { getYouTubeApiKey, trackApiRequest } from "./apiKeyManager";
 import { Playlist, Video } from "./types";
 
 // Extract playlist ID from YouTube URL
@@ -137,7 +138,7 @@ export async function fetchSingleVideo(url: string): Promise<Playlist> {
     throw new Error("Invalid YouTube video URL");
   }
 
-  const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
+  const apiKey = await getYouTubeApiKey();
 
   if (!apiKey) {
     console.warn("YouTube API key not found. Using mock data.");
@@ -163,6 +164,9 @@ export async function fetchSingleVideo(url: string): Promise<Playlist> {
   }
 
   try {
+    // Track API request
+    trackApiRequest();
+
     // Fetch video details
     const videoResponse = await fetch(
       `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,status&id=${videoId}&key=${apiKey}`
@@ -171,9 +175,19 @@ export async function fetchSingleVideo(url: string): Promise<Playlist> {
     if (!videoResponse.ok) {
       const errorData = await videoResponse.json().catch(() => ({}));
       console.error("YouTube API error:", errorData);
-      throw new Error(
-        errorData.error?.message || "Failed to fetch video details"
-      );
+      
+      // Check if it's an API key error
+      const errorCode = errorData.error?.code;
+      const errorMessage = errorData.error?.message || "Failed to fetch video details";
+      
+      // If it's an API key error (403 or 400 with specific messages), provide helpful error
+      if (errorCode === 403 || errorMessage.includes("API key") || errorMessage.includes("quota")) {
+        throw new Error(
+          "API key error: " + errorMessage + ". Please check your API key in settings."
+        );
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const videoData = await videoResponse.json();
@@ -236,8 +250,8 @@ export async function fetchPlaylist(url: string): Promise<Playlist> {
     throw new Error("Invalid YouTube playlist URL");
   }
 
-  // Check for API key in environment variables
-  const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
+  // Get API key (user's custom or default)
+  const apiKey = await getYouTubeApiKey();
 
   if (!apiKey) {
     console.warn("YouTube API key not found. Using mock data.");
@@ -245,13 +259,27 @@ export async function fetchPlaylist(url: string): Promise<Playlist> {
   }
 
   try {
+    // Track API request
+    trackApiRequest();
+
     // Fetch playlist details
     const playlistResponse = await fetch(
       `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${apiKey}`
     );
 
     if (!playlistResponse.ok) {
-      throw new Error("Failed to fetch playlist details");
+      const errorData = await playlistResponse.json().catch(() => ({}));
+      const errorCode = errorData.error?.code;
+      const errorMessage = errorData.error?.message || "Failed to fetch playlist details";
+      
+      // Check if it's an API key error
+      if (errorCode === 403 || errorMessage.includes("API key") || errorMessage.includes("quota")) {
+        throw new Error(
+          "API key error: " + errorMessage + ". Please check your API key in settings."
+        );
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const playlistData = await playlistResponse.json();

@@ -2,8 +2,16 @@
 
 import ConfirmDialog from "@/components/ConfirmDialog";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import {
+  getApiKeyStatus,
+  getUserApiKey,
+  resetRequestCount,
+  saveUserApiKey,
+} from "@/lib/apiKeyManager";
 import { useAuth } from "@/context/AuthContext";
 import {
+  ExternalLink,
+  Key,
   LogOut,
   PlayCircle,
   RotateCcw,
@@ -46,12 +54,53 @@ export default function SettingsPage() {
     return "next";
   });
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [apiKeyStatus, setApiKeyStatus] = useState<{
+    isCustom: boolean;
+    shouldPrompt: boolean;
+    requestCount: number;
+  }>({
+    isCustom: false,
+    shouldPrompt: false,
+    requestCount: 0,
+  });
+  const [apiKeyError, setApiKeyError] = useState("");
+  const [apiKeySuccess, setApiKeySuccess] = useState(false);
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
     }
   }, [authLoading, user, router]);
+
+  // Load API key status
+  useEffect(() => {
+    const loadApiKeyStatus = async () => {
+      const status = await getApiKeyStatus();
+      setApiKeyStatus({
+        isCustom: status.isCustom,
+        shouldPrompt: status.shouldPrompt,
+        requestCount: status.requestCount,
+      });
+
+      if (status.isCustom) {
+        const key = await getUserApiKey();
+        if (key) {
+          // Show masked key (first 8 chars + ...)
+          setApiKey(key.substring(0, 8) + "..." + key.substring(key.length - 4));
+          setShowApiKeyInput(false);
+        }
+      } else {
+        setApiKey("");
+        setShowApiKeyInput(status.shouldPrompt);
+      }
+    };
+
+    if (!authLoading) {
+      loadApiKeyStatus();
+    }
+  }, [authLoading]);
 
   const handleSpeedChange = (speed: number) => {
     setDefaultSpeed(speed);
@@ -81,6 +130,56 @@ export default function SettingsPage() {
     await signOut();
     router.push("/login");
     setShowSignOutDialog(false);
+  };
+
+  const handleApiKeySave = async () => {
+    setApiKeyError("");
+    setApiKeySuccess(false);
+
+    if (!apiKey.trim()) {
+      setApiKeyError("Please enter an API key");
+      return;
+    }
+
+    // Basic validation - YouTube API keys are usually 39 characters
+    if (apiKey.length < 30) {
+      setApiKeyError("Invalid API key format. Please check your key.");
+      return;
+    }
+
+    const success = await saveUserApiKey(apiKey.trim());
+    if (success) {
+      setApiKeySuccess(true);
+      resetRequestCount();
+      setShowApiKeyInput(false);
+      // Reload status
+      const status = await getApiKeyStatus();
+      setApiKeyStatus({
+        isCustom: status.isCustom,
+        shouldPrompt: status.shouldPrompt,
+        requestCount: status.requestCount,
+      });
+      // Show masked key
+      const key = await getUserApiKey();
+      if (key) {
+        setApiKey(key.substring(0, 8) + "..." + key.substring(key.length - 4));
+      }
+      setTimeout(() => setApiKeySuccess(false), 3000);
+    } else {
+      setApiKeyError("Failed to save API key. Please try again.");
+    }
+  };
+
+  const handleApiKeyDelete = async () => {
+    const { deleteUserApiKey } = await import("@/lib/apiKeyManager");
+    await deleteUserApiKey();
+    setApiKey("");
+    setShowApiKeyInput(false);
+    setApiKeyStatus({
+      isCustom: false,
+      shouldPrompt: false,
+      requestCount: 0,
+    });
   };
 
   if (authLoading) {
@@ -245,6 +344,126 @@ export default function SettingsPage() {
               </div>
             </button>
           </div>
+        </div>
+
+        {/* API Key Settings */}
+        <div className="bg-secondary rounded-xl p-5 border border-white/5">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Key size={20} className="text-primary" />
+            YouTube API Key
+          </h3>
+          {apiKeyStatus.shouldPrompt && !apiKeyStatus.isCustom && (
+            <div className="mb-4 p-3 bg-primary/10 border border-primary/30 rounded-lg">
+              <p className="text-sm text-primary font-medium mb-1">
+                High API usage detected
+              </p>
+              <p className="text-xs text-muted">
+                To avoid rate limits and ensure uninterrupted service, please add your own YouTube API key.
+              </p>
+            </div>
+          )}
+          {apiKeyStatus.isCustom ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-hover rounded-lg">
+                <div>
+                  <p className="text-sm font-medium">Custom API Key Active</p>
+                  <p className="text-xs text-muted mt-1 font-mono">{apiKey}</p>
+                </div>
+                <button
+                  onClick={handleApiKeyDelete}
+                  className="text-xs text-error hover:text-error/80 px-3 py-1.5 border border-error/30 hover:border-error/50 rounded-lg transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+              <p className="text-xs text-muted">
+                Your API key is securely stored and used for all YouTube API requests.
+              </p>
+            </div>
+          ) : showApiKeyInput ? (
+            <div className="space-y-3">
+              <div>
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => {
+                    setApiKey(e.target.value);
+                    setApiKeyError("");
+                  }}
+                  placeholder="Enter your YouTube API key"
+                  className="w-full px-4 py-3 bg-hover border border-white/10 rounded-lg text-sm text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+                {apiKeyError && (
+                  <p className="text-xs text-error mt-2">{apiKeyError}</p>
+                )}
+                {apiKeySuccess && (
+                  <p className="text-xs text-success mt-2">
+                    API key saved successfully!
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleApiKeySave}
+                  className="flex-1 px-4 py-2.5 bg-primary hover:bg-primary-hover text-dark font-semibold rounded-lg transition-colors text-sm"
+                >
+                  Save API Key
+                </button>
+                <button
+                  onClick={() => {
+                    setShowApiKeyInput(false);
+                    setApiKey("");
+                    setApiKeyError("");
+                  }}
+                  className="px-4 py-2.5 bg-hover hover:bg-hover/80 text-white font-medium rounded-lg transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+              <a
+                href="https://console.cloud.google.com/apis/credentials"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-xs text-primary hover:text-primary-hover transition-colors"
+              >
+                <ExternalLink size={14} />
+                Get your API key from Google Cloud Console
+              </a>
+              <p className="text-xs text-muted mt-2">
+                Don&apos;t have an API key?{" "}
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Create one here
+                </a>
+                . Your API key will be stored securely and only used for YouTube API requests.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted">
+                Add your own YouTube API key to avoid rate limits and ensure uninterrupted service.
+              </p>
+              <button
+                onClick={() => setShowApiKeyInput(true)}
+                className="w-full px-4 py-2.5 bg-primary hover:bg-primary-hover text-dark font-semibold rounded-lg transition-colors text-sm"
+              >
+                Add API Key
+              </button>
+              <a
+                href="https://console.cloud.google.com/apis/credentials"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-xs text-primary hover:text-primary-hover transition-colors justify-center"
+              >
+                <ExternalLink size={14} />
+                How to get an API key
+              </a>
+            </div>
+          )}
         </div>
 
         {/* Theme Settings */}
