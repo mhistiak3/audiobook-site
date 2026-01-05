@@ -449,8 +449,8 @@ export default function AudioPlayer({
       {/* Full Screen Player Overlay */}
       {isExpanded && (
         <div className="fixed inset-0 z-60 bg-linear-to-b from-surface to-background flex flex-col max-w-[480px] mx-auto animate-slideUp">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 pt-12">
+          {/* Header - Fixed */}
+          <div className="flex items-center justify-between p-6 pt-12 shrink-0">
             <button
               onClick={() => setIsExpanded(false)}
               className="text-foreground"
@@ -495,142 +495,147 @@ export default function AudioPlayer({
             </div>
           </div>
 
-          {/* Album Art */}
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="relative w-full aspect-square rounded-xl overflow-hidden shadow-2xl elevation-high">
-              <Image
-                src={currentVideo.thumbnail}
-                alt={currentVideo.title}
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-          </div>
-
-          {/* Controls Area */}
-          <div className="p-8 pb-16 space-y-8">
-            {/* Title Info */}
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-1 leading-tight">
-                {currentVideo.title}
-              </h2>
-              <p className="text-lg text-gray-400">
-                Audiobook Chapter {currentVideoIndex + 1}
-              </p>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <div className="relative h-2 bg-gray-600/50 rounded-full overflow-hidden">
-                <div
-                  className="absolute top-0 left-0 h-full bg-white rounded-full transition-all"
-                  style={{ width: `${played * 100}%` }}
-                />
-                <input
-                  type="range"
-                  min={0}
-                  max={0.999999}
-                  step="any"
-                  value={played}
-                  onChange={handleSeek}
-                  className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10"
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+            {/* Album Art */}
+            <div className="flex items-center justify-center px-8 py-4">
+              <div className="relative w-full max-w-[280px] aspect-square rounded-xl overflow-hidden shadow-2xl elevation-high">
+                <Image
+                  src={currentVideo.thumbnail}
+                  alt={currentVideo.title}
+                  fill
+                  className="object-cover"
+                  priority
                 />
               </div>
-              <div className="flex justify-between text-xs text-gray-400 font-medium">
-                <span>
-                  {duration > 0 ? formatTime(duration * played) : "00:00"}
-                </span>
-                <span>
-                  {duration > 0 ? formatTime(duration) : currentVideo.duration}
-                </span>
+            </div>
+
+            {/* Controls Area */}
+            <div className="px-8 pb-8 space-y-6">
+              {/* Title Info */}
+              <div className="text-center">
+                <h2 className="text-xl font-bold text-white mb-1 leading-tight">
+                  {currentVideo.title}
+                </h2>
+                <p className="text-base text-gray-400">
+                  Audiobook Chapter {currentVideoIndex + 1}
+                </p>
               </div>
-            </div>
 
-            {/* Main Controls */}
-            <div className="flex items-center justify-between">
-              <button
-                onClick={handlePrev}
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                <SkipBack size={32} />
-              </button>
-
-              <button
-                onClick={handlePlayPause}
-                className="w-20 h-20 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg"
-              >
-                {isPlayingRedux ? (
-                  <Pause size={32} className="text-black fill-black" />
-                ) : (
-                  <Play size={32} className="text-black fill-black ml-1" />
-                )}
-              </button>
-
-              <button
-                onClick={handleNext}
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                <SkipForward size={32} />
-              </button>
-            </div>
-
-            {/* Volume Control */}
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleToggleMute}
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
-                  {isMuted || volume === 0 ? (
-                    <VolumeX size={20} />
-                  ) : (
-                    <Volume2 size={20} />
-                  )}
-                </button>
-                <div className="flex-1 relative h-2 bg-gray-600/50 rounded-full overflow-hidden">
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="relative h-2 bg-gray-600/50 rounded-full overflow-hidden">
                   <div
                     className="absolute top-0 left-0 h-full bg-white rounded-full transition-all"
-                    style={{ width: `${isMuted ? 0 : volume}%` }}
+                    style={{ width: `${played * 100}%` }}
                   />
                   <input
                     type="range"
                     min={0}
-                    max={100}
-                    step={1}
-                    value={isMuted ? 0 : volume}
-                    onChange={handleVolumeChange}
+                    max={0.999999}
+                    step="any"
+                    value={played}
+                    onChange={handleSeek}
                     className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
                 </div>
-                <span className="text-xs text-gray-400 w-8 text-right">
-                  {isMuted ? 0 : volume}
-                </span>
+                <div className="flex justify-between text-xs text-gray-400 font-medium">
+                  <span>
+                    {duration > 0 ? formatTime(duration * played) : "00:00"}
+                  </span>
+                  <span>
+                    {duration > 0
+                      ? formatTime(duration)
+                      : currentVideo.duration}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {/* Skip Controls */}
-            <div className="flex items-center justify-center gap-6">
-              <button
-                onClick={handleSkipBackward}
-                className="flex flex-col items-center gap-1 text-gray-300 hover:text-white transition-colors"
-              >
-                <RotateCcw size={24} />
-                <span className="text-xs">{skipBackward}s</span>
-              </button>
-              <button
-                onClick={handleSkipForward}
-                className="flex flex-col items-center gap-1 text-gray-300 hover:text-white transition-colors"
-              >
-                <RotateCw size={24} />
-                <span className="text-xs">{skipForward}s</span>
-              </button>
-            </div>
+              {/* Main Controls */}
+              <div className="flex items-center justify-center gap-8">
+                <button
+                  onClick={handlePrev}
+                  className="text-gray-300 hover:text-white transition-colors p-2"
+                >
+                  <SkipBack size={28} />
+                </button>
 
-            {/* Speed Indicator */}
-            <div className="flex items-center justify-center gap-2 text-sm text-muted">
-              <Gauge size={16} />
-              <span>{playbackSpeed}x Speed</span>
+                <button
+                  onClick={handlePlayPause}
+                  className="w-16 h-16 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg"
+                >
+                  {isPlayingRedux ? (
+                    <Pause size={28} className="text-black fill-black" />
+                  ) : (
+                    <Play size={28} className="text-black fill-black ml-1" />
+                  )}
+                </button>
+
+                <button
+                  onClick={handleNext}
+                  className="text-gray-300 hover:text-white transition-colors p-2"
+                >
+                  <SkipForward size={28} />
+                </button>
+              </div>
+
+              {/* Skip Controls */}
+              <div className="flex items-center justify-center gap-10">
+                <button
+                  onClick={handleSkipBackward}
+                  className="flex flex-col items-center gap-1 text-gray-300 hover:text-white transition-colors"
+                >
+                  <RotateCcw size={22} />
+                  <span className="text-xs">{skipBackward}s</span>
+                </button>
+                <button
+                  onClick={handleSkipForward}
+                  className="flex flex-col items-center gap-1 text-gray-300 hover:text-white transition-colors"
+                >
+                  <RotateCw size={22} />
+                  <span className="text-xs">{skipForward}s</span>
+                </button>
+              </div>
+
+              {/* Volume Control */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleToggleMute}
+                    className="text-gray-300 hover:text-white transition-colors"
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX size={20} />
+                    ) : (
+                      <Volume2 size={20} />
+                    )}
+                  </button>
+                  <div className="flex-1 relative h-2 bg-gray-600/50 rounded-full overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 h-full bg-white rounded-full transition-all"
+                      style={{ width: `${isMuted ? 0 : volume}%` }}
+                    />
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={isMuted ? 0 : volume}
+                      onChange={handleVolumeChange}
+                      className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                  </div>
+                  <span className="text-xs text-gray-400 w-8 text-right">
+                    {isMuted ? 0 : volume}
+                  </span>
+                </div>
+              </div>
+
+              {/* Speed Indicator */}
+              <div className="flex items-center justify-center gap-2 text-sm text-muted pb-4">
+                <Gauge size={16} />
+                <span>{playbackSpeed}x Speed</span>
+              </div>
             </div>
           </div>
         </div>

@@ -2,13 +2,13 @@
 
 import ConfirmDialog from "@/components/ConfirmDialog";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import { useAuth } from "@/context/AuthContext";
 import {
   getApiKeyStatus,
   getUserApiKey,
   resetRequestCount,
   saveUserApiKey,
 } from "@/lib/apiKeyManager";
-import { useAuth } from "@/context/AuthContext";
 import {
   ExternalLink,
   Key,
@@ -88,7 +88,9 @@ export default function SettingsPage() {
         const key = await getUserApiKey();
         if (key) {
           // Show masked key (first 8 chars + ...)
-          setApiKey(key.substring(0, 8) + "..." + key.substring(key.length - 4));
+          setApiKey(
+            key.substring(0, 8) + "..." + key.substring(key.length - 4)
+          );
           setShowApiKeyInput(false);
         }
       } else {
@@ -358,7 +360,8 @@ export default function SettingsPage() {
                 High API usage detected
               </p>
               <p className="text-xs text-muted">
-                To avoid rate limits and ensure uninterrupted service, please add your own YouTube API key.
+                To avoid rate limits and ensure uninterrupted service, please
+                add your own YouTube API key.
               </p>
             </div>
           )}
@@ -377,7 +380,8 @@ export default function SettingsPage() {
                 </button>
               </div>
               <p className="text-xs text-muted">
-                Your API key is securely stored and used for all YouTube API requests.
+                Your API key is securely stored and used for all YouTube API
+                requests.
               </p>
             </div>
           ) : showApiKeyInput ? (
@@ -439,13 +443,15 @@ export default function SettingsPage() {
                 >
                   Create one here
                 </a>
-                . Your API key will be stored securely and only used for YouTube API requests.
+                . Your API key will be stored securely and only used for YouTube
+                API requests.
               </p>
             </div>
           ) : (
             <div className="space-y-3">
               <p className="text-sm text-muted">
-                Add your own YouTube API key to avoid rate limits and ensure uninterrupted service.
+                Add your own YouTube API key to avoid rate limits and ensure
+                uninterrupted service.
               </p>
               <button
                 onClick={() => setShowApiKeyInput(true)}
@@ -486,7 +492,7 @@ export default function SettingsPage() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted">Version</span>
-              <span className="font-medium">1.2.0</span>
+              <span className="font-medium">1.4.0</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted">App Name</span>

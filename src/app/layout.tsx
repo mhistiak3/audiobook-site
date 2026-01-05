@@ -1,4 +1,5 @@
 import Navigation from "@/components/Navigation";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { PWAInstaller } from "@/components/PWAInstaller";
 import { ReduxProvider } from "@/components/ReduxProvider";
 import { AuthProvider } from "@/context/AuthContext";
@@ -46,6 +47,7 @@ export default function RootLayout({
               <div className="mobile-shell w-full">
                 {children}
                 <Navigation />
+                <OfflineIndicator />
               </div>
             </div>
           </ReduxProvider>
