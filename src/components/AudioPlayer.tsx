@@ -68,13 +68,19 @@ export default function AudioPlayer({
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showBookmarkMenu, setShowBookmarkMenu] = useState(false);
   const [bookmarkNote, setBookmarkNote] = useState("");
-  const [skipBackward, setSkipBackward] = useState(() => {
-    const saved = localStorage.getItem("skipBackwardSeconds");
-    return saved ? parseInt(saved) : 10;
+  const [skipBackward] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("skipBackwardSeconds");
+      return saved ? parseInt(saved) : 10;
+    }
+    return 10;
   });
-  const [skipForward, setSkipForward] = useState(() => {
-    const saved = localStorage.getItem("skipForwardSeconds");
-    return saved ? parseInt(saved) : 30;
+  const [skipForward] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("skipForwardSeconds");
+      return saved ? parseInt(saved) : 30;
+    }
+    return 30;
   });
   const [isExpanded, setIsExpanded] = useState(false);
   const playerRef = useRef<YouTubePlayer | null>(null);
@@ -104,6 +110,69 @@ export default function AudioPlayer({
       hasRestoredPosition.current = false;
     }
   }, [currentVideo, currentVideoIndex, dispatch]);
+
+  // Keyboard shortcuts - must be before early return
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input or textarea
+      if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      switch (e.key) {
+        case " ":
+        case "k":
+        case "K":
+          e.preventDefault();
+          if (playerRef.current) {
+            if (isPlayingRedux) {
+              playerRef.current.pauseVideo();
+            } else {
+              playerRef.current.playVideo();
+            }
+          }
+          break;
+        case "ArrowLeft":
+          if (playerRef.current && duration > 0) {
+            const currentTime = playerRef.current.getCurrentTime();
+            const newTime = Math.max(0, currentTime - skipBackward);
+            playerRef.current.seekTo(newTime, true);
+            setPlayed(newTime / duration);
+          }
+          break;
+        case "ArrowRight":
+          if (playerRef.current && duration > 0) {
+            const currentTime = playerRef.current.getCurrentTime();
+            const newTime = Math.min(duration, currentTime + skipForward);
+            playerRef.current.seekTo(newTime, true);
+            setPlayed(newTime / duration);
+          }
+          break;
+        case "m":
+        case "M":
+          setIsMuted((prev) => {
+            const newMuted = !prev;
+            if (playerRef.current) {
+              if (newMuted) {
+                playerRef.current.mute();
+              } else {
+                playerRef.current.unMute();
+                playerRef.current.setVolume(volume);
+              }
+            }
+            localStorage.setItem("playerMuted", newMuted.toString());
+            return newMuted;
+          });
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPlayingRedux, duration, skipBackward, skipForward, volume]);
 
   if (!currentVideo) return null;
 
@@ -323,46 +392,6 @@ export default function AudioPlayer({
     }
     localStorage.setItem("playerMuted", newMuted.toString());
   };
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in an input or textarea
-      if (
-        document.activeElement instanceof HTMLInputElement ||
-        document.activeElement instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
-
-      switch (e.key) {
-        case " ":
-        case "k":
-        case "K":
-          e.preventDefault(); // Prevent scrolling
-          handlePlayPause();
-          break;
-        case "ArrowLeft":
-          handleSkipBackward();
-          break;
-        case "ArrowRight":
-          handleSkipForward();
-          break;
-        case "m":
-        case "M":
-          handleToggleMute();
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    handlePlayPause,
-    handleSkipBackward,
-    handleSkipForward,
-    handleToggleMute,
-  ]);
 
   const speedOptions = [0.75, 1, 1.25, 1.5, 1.75, 2];
 
