@@ -2,6 +2,7 @@
 
 import ApiKeyPrompt from "@/components/ApiKeyPrompt";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import FabMenu from "@/components/FabMenu";
 import PlaylistCard from "@/components/PlaylistCard";
 import PlaylistInput from "@/components/PlaylistInput";
 import VideoInput from "@/components/VideoInput";
@@ -11,7 +12,14 @@ import { Playlist } from "@/lib/types";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { clearPlaylistProgress, setVideoProgress } from "@/store/playerSlice";
 import { deletePlaylist, setPlaylists } from "@/store/playlistSlice";
-import { ChevronDown, Download, Library, LogOut, Play } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  Download,
+  Library,
+  LogOut,
+  Play,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -49,7 +57,7 @@ export default function Home() {
       .filter((p) => !p.watched && p.currentTime > 5) // At least 5 seconds played
       .sort(
         (a, b) =>
-          new Date(b.lastPlayed).getTime() - new Date(a.lastPlayed).getTime()
+          new Date(b.lastPlayed).getTime() - new Date(a.lastPlayed).getTime(),
       )
       .slice(0, 5); // Top 5 most recent
 
@@ -57,13 +65,13 @@ export default function Home() {
     return inProgress
       .map((progress) => {
         const playlist = playlists.find((p) =>
-          p.videos.some((v) => v.id === progress.videoId)
+          p.videos.some((v) => v.id === progress.videoId),
         );
         if (!playlist) return null;
 
         const video = playlist.videos.find((v) => v.id === progress.videoId);
         const videoIndex = playlist.videos.findIndex(
-          (v) => v.id === progress.videoId
+          (v) => v.id === progress.videoId,
         );
 
         return {
@@ -146,7 +154,7 @@ export default function Home() {
       <ApiKeyPrompt />
 
       {/* Header */}
-      <header className="pt-[var(--safe-top)] px-6 pb-4 sticky top-0 z-10 bg-surface/90 backdrop-blur-md border-b border-white/5">
+      <header className="pt-(--safe-top) px-6 pb-4 sticky top-0 z-10 bg-surface/90 backdrop-blur-md border-b border-white/5">
         <div className="flex items-center justify-between pt-4">
           <div className="flex items-center gap-3">
             <Image
@@ -193,40 +201,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="px-6 py-4 flex gap-3 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab("library")}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-            activeTab === "library"
-              ? "bg-white text-black"
-              : "bg-secondary text-white"
-          }`}
-        >
-          Library
-        </button>
-        <button
-          onClick={() => setActiveTab("add-playlist")}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-            activeTab === "add-playlist"
-              ? "bg-white text-black"
-              : "bg-secondary text-white"
-          }`}
-        >
-          Add Playlist
-        </button>
-        <button
-          onClick={() => setActiveTab("add-video")}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-            activeTab === "add-video"
-              ? "bg-white text-black"
-              : "bg-secondary text-white"
-          }`}
-        >
-          Add Video
-        </button>
-      </div>
-
       {/* Content */}
       <main className="flex-1 px-4">
         {loading ? (
@@ -235,6 +209,13 @@ export default function Home() {
           </div>
         ) : activeTab === "add-playlist" ? (
           <div className="animate-fadeIn py-4">
+            <button
+              onClick={() => setActiveTab("library")}
+              className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 px-2"
+            >
+              <ChevronLeft size={20} />
+              <span className="text-sm font-medium">Back to Library</span>
+            </button>
             <h2 className="text-xl font-bold text-white mb-2 px-2">
               Add Playlist
             </h2>
@@ -245,6 +226,13 @@ export default function Home() {
           </div>
         ) : activeTab === "add-video" ? (
           <div className="animate-fadeIn py-4">
+            <button
+              onClick={() => setActiveTab("library")}
+              className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 px-2"
+            >
+              <ChevronLeft size={20} />
+              <span className="text-sm font-medium">Back to Library</span>
+            </button>
             <h2 className="text-xl font-bold text-white mb-2 px-2">
               Add Single Video
             </h2>
@@ -276,7 +264,7 @@ export default function Home() {
                             key={item.progress.videoId}
                             onClick={() =>
                               router.push(
-                                `/playlist/${item.playlist.id}?video=${item.video.id}`
+                                `/playlist/${item.playlist.id}?video=${item.video.id}`,
                               )
                             }
                             className="bg-secondary rounded-xl p-3 flex items-center gap-3 hover:bg-hover transition-all cursor-pointer border border-white/5 hover:border-primary/30"
@@ -361,8 +349,8 @@ export default function Home() {
                   {libraryFilter === "playlists"
                     ? "playlists"
                     : libraryFilter === "videos"
-                    ? "videos"
-                    : "items"}{" "}
+                      ? "videos"
+                      : "items"}{" "}
                   found
                 </p>
               </div>
@@ -400,6 +388,11 @@ export default function Home() {
         onConfirm={confirmDeletePlaylist}
         onCancel={() => setDeleteDialog({ isOpen: false, playlistId: null })}
       />
+
+      {/* FAB Menu */}
+      {activeTab === "library" && (
+        <FabMenu onSelect={(option) => setActiveTab(option)} />
+      )}
     </div>
   );
 }
