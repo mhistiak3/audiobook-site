@@ -89,7 +89,7 @@ export default function SettingsPage() {
         if (key) {
           // Show masked key (first 8 chars + ...)
           setApiKey(
-            key.substring(0, 8) + "..." + key.substring(key.length - 4)
+            key.substring(0, 8) + "..." + key.substring(key.length - 4),
           );
           setShowApiKeyInput(false);
         }
@@ -198,7 +198,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-linear-to-b from-hover to-surface pb-24">
       {/* Header */}
-      <header className="pt-[var(--safe-top)] px-6 pb-6 sticky top-0 z-10 bg-surface/90 backdrop-blur-md border-b border-white/5">
+      <header className="pt-(--safe-top) px-6 pb-6 sticky top-0 z-10 bg-surface/90 backdrop-blur-md border-b border-white/5">
         <div className="pt-4">
           <h1 className="text-2xl font-bold">Settings</h1>
           <p className="text-muted text-sm mt-1">Customize your experience</p>
