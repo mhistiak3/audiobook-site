@@ -169,24 +169,31 @@ export async function fetchSingleVideo(url: string): Promise<Playlist> {
 
     // Fetch video details
     const videoResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,status&id=${videoId}&key=${apiKey}`
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,status&id=${videoId}&key=${apiKey}`,
     );
 
     if (!videoResponse.ok) {
       const errorData = await videoResponse.json().catch(() => ({}));
       console.error("YouTube API error:", errorData);
-      
+
       // Check if it's an API key error
       const errorCode = errorData.error?.code;
-      const errorMessage = errorData.error?.message || "Failed to fetch video details";
-      
+      const errorMessage =
+        errorData.error?.message || "Failed to fetch video details";
+
       // If it's an API key error (403 or 400 with specific messages), provide helpful error
-      if (errorCode === 403 || errorMessage.includes("API key") || errorMessage.includes("quota")) {
+      if (
+        errorCode === 403 ||
+        errorMessage.includes("API key") ||
+        errorMessage.includes("quota")
+      ) {
         throw new Error(
-          "API key error: " + errorMessage + ". Please check your API key in settings."
+          "API key error: " +
+            errorMessage +
+            ". Please check your API key in settings.",
         );
       }
-      
+
       throw new Error(errorMessage);
     }
 
@@ -201,7 +208,7 @@ export async function fetchSingleVideo(url: string): Promise<Playlist> {
     // Check if video is embeddable
     if (videoInfo.status?.embeddable === false) {
       throw new Error(
-        "This video cannot be embedded. The creator has disabled embedding."
+        "This video cannot be embedded. The creator has disabled embedding.",
       );
     }
 
@@ -264,21 +271,28 @@ export async function fetchPlaylist(url: string): Promise<Playlist> {
 
     // Fetch playlist details
     const playlistResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${apiKey}`
+      `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${apiKey}`,
     );
 
     if (!playlistResponse.ok) {
       const errorData = await playlistResponse.json().catch(() => ({}));
       const errorCode = errorData.error?.code;
-      const errorMessage = errorData.error?.message || "Failed to fetch playlist details";
-      
+      const errorMessage =
+        errorData.error?.message || "Failed to fetch playlist details";
+
       // Check if it's an API key error
-      if (errorCode === 403 || errorMessage.includes("API key") || errorMessage.includes("quota")) {
+      if (
+        errorCode === 403 ||
+        errorMessage.includes("API key") ||
+        errorMessage.includes("quota")
+      ) {
         throw new Error(
-          "API key error: " + errorMessage + ". Please check your API key in settings."
+          "API key error: " +
+            errorMessage +
+            ". Please check your API key in settings.",
         );
       }
-      
+
       throw new Error(errorMessage);
     }
 
@@ -311,13 +325,13 @@ export async function fetchPlaylist(url: string): Promise<Playlist> {
       const videoIds = itemsData.items
         .map(
           (item: { snippet: { resourceId: { videoId: string } } }) =>
-            item.snippet.resourceId.videoId
+            item.snippet.resourceId.videoId,
         )
         .join(",");
 
       // Fetch video details for durations
       const videosResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIds}&key=${apiKey}`
+        `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIds}&key=${apiKey}`,
       );
 
       const videosData = await videosResponse.json();
@@ -332,12 +346,12 @@ export async function fetchPlaylist(url: string): Promise<Playlist> {
               thumbnails: { high?: { url: string }; default: { url: string } };
             };
           },
-          index: number
+          index: number,
         ) => {
           const videoId = item.snippet.resourceId.videoId;
           const videoDetails = videosData.items[index];
           const durationSeconds = parseDuration(
-            videoDetails.contentDetails.duration
+            videoDetails.contentDetails.duration,
           );
 
           videos.push({
@@ -349,7 +363,7 @@ export async function fetchPlaylist(url: string): Promise<Playlist> {
             duration: formatDuration(durationSeconds),
             durationSeconds,
           });
-        }
+        },
       );
 
       nextPageToken = itemsData.nextPageToken;
@@ -371,5 +385,74 @@ export async function fetchPlaylist(url: string): Promise<Playlist> {
     // Fallback to mock data on error
     console.warn("Falling back to mock data due to API error");
     return getMockPlaylist(playlistId);
+  }
+}
+
+// Search for videos on YouTube
+export interface SearchResult {
+  id: string;
+  title: string;
+  thumbnail: string;
+  channelTitle: string;
+  description: string;
+}
+
+export async function searchVideos(query: string): Promise<SearchResult[]> {
+  if (!query.trim()) return [];
+
+  const apiKey = await getYouTubeApiKey();
+
+  if (!apiKey) {
+    console.warn("YouTube API key not found. Using mock search results.");
+    return [
+      {
+        id: "dQw4w9WgXcQ",
+        title: "Rick Astley - Never Gonna Give You Up (Official Music Video)",
+        thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+        channelTitle: "Rick Astley",
+        description:
+          "The official video for “Never Gonna Give You Up” by Rick Astley. Taken from the album ‘Whenever You Need Somebody’.",
+      },
+      {
+        id: "jNQXAC9IVRw",
+        title: "Me at the zoo",
+        thumbnail: "https://i.ytimg.com/vi/jNQXAC9IVRw/hqdefault.jpg",
+        channelTitle: "jawed",
+        description: "The first video on YouTube.",
+      },
+    ];
+  }
+
+  try {
+    trackApiRequest();
+
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q=${encodeURIComponent(
+      query,
+    )}&key=${apiKey}`;
+
+    const response = await fetch(searchUrl);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("YouTube Search API error:", errorData);
+      throw new Error(errorData.error?.message || "Failed to search videos");
+    }
+
+    const data = await response.json();
+
+    if (!data.items) return [];
+
+    return data.items.map((item: any) => ({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      thumbnail:
+        item.snippet.thumbnails.high?.url ||
+        item.snippet.thumbnails.default.url,
+      channelTitle: item.snippet.channelTitle,
+      description: item.snippet.description,
+    }));
+  } catch (error) {
+    console.error("Error searching videos:", error);
+    throw error;
   }
 }

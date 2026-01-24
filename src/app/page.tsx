@@ -19,8 +19,10 @@ import {
   Library,
   LogOut,
   Play,
+  Search,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -176,6 +178,13 @@ export default function Home() {
                 <Download size={20} className="text-primary" />
               </button>
             )}
+            <Link
+              href="/search"
+              className="p-2 rounded-full hover:bg-secondary transition-colors"
+              title="Search"
+            >
+              <Search size={20} className="text-white" />
+            </Link>
             {user ? (
               <>
                 <button
