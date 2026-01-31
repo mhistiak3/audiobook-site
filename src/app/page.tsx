@@ -166,7 +166,9 @@ export default function Home() {
               height={32}
               className="rounded-lg"
             />
-            <h1 className="text-2xl font-bold text-foreground">iAudioBook</h1>
+            <h1 className="text-2xl font-bold text-foreground sm:block hidden">
+              iAudioBook
+            </h1>
           </div>
           <div className="flex items-center gap-3">
             {deferredPrompt && (
