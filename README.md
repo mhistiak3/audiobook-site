@@ -1,7 +1,6 @@
 # 🎧 Audiobook Player
 
-A minimal, modern audiobook player built with Next.js that transforms YouTube playlists into an immersive listening experience. Now with **Supabase cloud sync** and **PWA support**!
-
+A minimal, modern audiobook player built with Next.js that transforms YouTube playlists into an immersive listening experience. 
 ## ✨ Features
 
 ### 🎯 New Features (December 2025)
