@@ -1,11 +1,12 @@
 "use client";
 
+import { sharePlaylist, shareVideo } from "@/lib/share";
 import { Playlist } from "@/lib/types";
 import { useAppSelector } from "@/store/hooks";
-import { ChevronRight, Music2, Trash2 } from "lucide-react";
+import { Music2, Share2, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 interface PlaylistCardProps {
   playlist: Playlist;
@@ -17,6 +18,7 @@ export default function PlaylistCard({
   onDelete,
 }: PlaylistCardProps) {
   const videoProgress = useAppSelector((state) => state.player.videoProgress);
+  const [shareToast, setShareToast] = useState<string | null>(null);
 
   // Calculate playlist progress
   const playlistProgress = useMemo(() => {
@@ -72,27 +74,58 @@ export default function PlaylistCard({
               </div>
             )}
           </div>
-
-          {/* Arrow */}
-          <ChevronRight
-            size={20}
-            className="text-icon group-hover:text-foreground transition-colors"
-          />
         </div>
       </Link>
 
-      {onDelete && (
+      {/* Action Buttons */}
+      <div className="absolute right-2 top-2/3 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
         <button
-          onClick={(e) => {
+          onClick={async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            onDelete();
+            // If single video, share as video. If playlist, share as playlist.
+            const result =
+              playlist.videoCount === 1
+                ? await shareVideo(playlist.videos[0].id, playlist.title)
+                : await sharePlaylist(
+                    playlist.id,
+                    playlist.title,
+                    playlist.videoCount,
+                  );
+            if (result.success) {
+              setShareToast(
+                result.method === "clipboard" ? "Link copied!" : "Shared!",
+              );
+              setTimeout(() => setShareToast(null), 2000);
+            }
           }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-muted-dark hover:text-error hover:bg-error-bg rounded-full transition-all opacity-0 group-hover:opacity-100"
-          title="Delete Playlist"
+          className="p-2 text-muted-dark hover:text-primary hover:bg-primary/10 rounded-full transition-all"
+          title="Share"
         >
-          <Trash2 size={18} />
+          <Share2 size={18} />
         </button>
+        {onDelete && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="p-2 text-muted-dark hover:text-error hover:bg-error-bg rounded-full transition-all"
+            title="Delete Playlist"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
+      </div>
+
+      {/* Share Toast */}
+      {shareToast && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-50 animate-fadeIn">
+          <div className="bg-primary text-black px-3 py-1.5 rounded-full shadow-lg text-xs font-medium whitespace-nowrap">
+            {shareToast}
+          </div>
+        </div>
       )}
     </div>
   );

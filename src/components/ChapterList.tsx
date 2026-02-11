@@ -1,8 +1,10 @@
 "use client";
 
+import { shareVideo } from "@/lib/share";
 import { Video } from "@/lib/types";
 import { useAppSelector } from "@/store/hooks";
-import { BarChart2, CheckCircle, Play, Trash2 } from "lucide-react";
+import { BarChart2, CheckCircle, Play, Share2, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 interface ChapterListProps {
   videos: Video[];
@@ -18,8 +20,10 @@ export default function ChapterList({
   onDeleteVideo,
 }: ChapterListProps) {
   const videoProgress = useAppSelector((state) => state.player.videoProgress);
+  const [shareToast, setShareToast] = useState<string | null>(null);
+
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 relative">
       {videos.map((video, index) => {
         const isPlaying = index === currentVideoIndex;
         const progress = videoProgress[video.id];
@@ -29,7 +33,7 @@ export default function ChapterList({
           <div key={video.id} className="group relative flex items-center">
             <button
               onClick={() => onVideoSelect(index)}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left pr-12 ${
+              className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left pr-20 ${
                 isPlaying ? "bg-secondary" : "hover:bg-hover"
               }`}
             >
@@ -66,21 +70,51 @@ export default function ChapterList({
               </div>
             </button>
 
-            {onDeleteVideo && (
+            {/* Action buttons */}
+            <div className="absolute right-2 flex items-center gap-1  transition-all">
               <button
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
-                  onDeleteVideo(video.id);
+                  const result = await shareVideo(video.id, video.title);
+                  if (result.success) {
+                    setShareToast(
+                      result.method === "clipboard"
+                        ? "Link copied!"
+                        : "Shared!",
+                    );
+                    setTimeout(() => setShareToast(null), 2000);
+                  }
                 }}
-                className="absolute right-2 p-2 text-muted-dark hover:text-error hover:bg-error-bg rounded-full transition-all opacity-0 group-hover:opacity-100"
-                title="Remove Chapter"
+                className="p-2 text-muted-dark hover:text-primary hover:bg-primary/10 rounded-full transition-all"
+                title="Share Chapter"
               >
-                <Trash2 size={16} />
+                <Share2 size={16} />
               </button>
-            )}
+              {onDeleteVideo && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteVideo(video.id);
+                  }}
+                  className="p-2 text-muted-dark hover:text-error hover:bg-error-bg rounded-full transition-all"
+                  title="Remove Chapter"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
           </div>
         );
       })}
+
+      {/* Share Toast */}
+      {shareToast && (
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50 animate-fadeIn">
+          <div className="bg-primary text-black px-4 py-2 rounded-full shadow-lg text-sm font-medium">
+            {shareToast}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

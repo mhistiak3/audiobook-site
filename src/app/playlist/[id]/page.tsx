@@ -4,6 +4,7 @@ import AudioPlayer from "@/components/AudioPlayer";
 import ChapterList from "@/components/ChapterList";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { hybridStorage } from "@/lib/hybridStorage";
+import { sharePlaylist, shareVideo } from "@/lib/share";
 import { Playlist } from "@/lib/types";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
@@ -16,7 +17,7 @@ import {
   removeVideoFromPlaylist,
   setPlaylists,
 } from "@/store/playlistSlice";
-import { ArrowLeft, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, Clock, Share2, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -29,7 +30,7 @@ export default function PlaylistPage() {
   const dispatch = useAppDispatch();
   const playlists = useAppSelector((state) => state.playlists.playlists);
   const currentVideoIndex = useAppSelector(
-    (state) => state.player.currentVideoIndex
+    (state) => state.player.currentVideoIndex,
   );
 
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
@@ -39,6 +40,7 @@ export default function PlaylistPage() {
     videoId: string | null;
   }>({ isOpen: false, videoId: null });
   const [deletePlaylistDialog, setDeletePlaylistDialog] = useState(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -75,7 +77,7 @@ export default function PlaylistPage() {
   }
 
   const totalDuration = Math.floor(
-    playlist.videos.reduce((acc, v) => acc + v.durationSeconds, 0) / 60
+    playlist.videos.reduce((acc, v) => acc + v.durationSeconds, 0) / 60,
   );
 
   const handleDeleteVideo = (videoId: string) => {
@@ -89,7 +91,12 @@ export default function PlaylistPage() {
     dispatch(clearVideoProgress(deleteVideoDialog.videoId));
 
     // Remove video from playlist
-    dispatch(removeVideoFromPlaylist({ playlistId, videoId: deleteVideoDialog.videoId }));
+    dispatch(
+      removeVideoFromPlaylist({
+        playlistId,
+        videoId: deleteVideoDialog.videoId,
+      }),
+    );
 
     // Refresh playlist
     const updated = await hybridStorage.getPlaylist(playlistId);
@@ -97,9 +104,7 @@ export default function PlaylistPage() {
       setPlaylist(updated);
       // Adjust current index if needed
       if (currentVideoIndex >= updated.videos.length) {
-        dispatch(
-          setCurrentVideoIndex(Math.max(0, updated.videos.length - 1))
-        );
+        dispatch(setCurrentVideoIndex(Math.max(0, updated.videos.length - 1)));
       }
     }
 
@@ -142,6 +147,30 @@ export default function PlaylistPage() {
           <h1 className="text-lg font-bold text-white truncate flex-1">
             {playlist.title}
           </h1>
+          <button
+            onClick={async () => {
+              // If single video, share as video. If playlist, share as playlist.
+              const result =
+                playlist.videoCount === 1
+                  ? await shareVideo(playlist.videos[0].id, playlist.title)
+                  : await sharePlaylist(
+                      playlist.id,
+                      playlist.title,
+                      playlist.videoCount,
+                    );
+              if (result.success) {
+                setShareToast(
+                  result.method === "clipboard" ? "Link copied!" : "Shared!",
+                );
+                setTimeout(() => setShareToast(null), 2000);
+              }
+            }}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-primary/20 hover:text-primary transition-colors text-white"
+            aria-label="Share"
+            title="Share"
+          >
+            <Share2 size={20} />
+          </button>
           <button
             onClick={handleDeletePlaylist}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-error/20 hover:text-error transition-colors text-white"
@@ -223,6 +252,15 @@ export default function PlaylistPage() {
         onConfirm={confirmDeletePlaylist}
         onCancel={() => setDeletePlaylistDialog(false)}
       />
+
+      {/* Share Toast */}
+      {shareToast && (
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50 animate-fadeIn">
+          <div className="bg-primary text-black px-4 py-2 rounded-full shadow-lg text-sm font-medium">
+            {shareToast}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

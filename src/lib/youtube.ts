@@ -249,6 +249,103 @@ export async function fetchSingleVideo(url: string): Promise<Playlist> {
   }
 }
 
+// Fetch video by ID (for share links)
+export async function fetchVideoById(videoId: string): Promise<Playlist> {
+  if (!videoId) {
+    throw new Error("Invalid video ID");
+  }
+
+  const apiKey = await getYouTubeApiKey();
+
+  if (!apiKey) {
+    console.warn("YouTube API key not found. Using mock data.");
+    return {
+      id: videoId,
+      title: "Demo Video",
+      description:
+        "This is a demo video. Add your YouTube API key to fetch real videos.",
+      thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      videoCount: 1,
+      videos: [
+        {
+          id: videoId,
+          title: "Demo Video",
+          thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          duration: "10:00",
+          durationSeconds: 600,
+        },
+      ],
+      url: `https://www.youtube.com/watch?v=${videoId}`,
+      dateAdded: new Date().toISOString(),
+    };
+  }
+
+  try {
+    trackApiRequest();
+
+    const videoResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,status&id=${videoId}&key=${apiKey}`,
+    );
+
+    if (!videoResponse.ok) {
+      const errorData = await videoResponse.json().catch(() => ({}));
+      const errorMessage =
+        errorData.error?.message || "Failed to fetch video details";
+      throw new Error(errorMessage);
+    }
+
+    const videoData = await videoResponse.json();
+
+    if (!videoData.items || videoData.items.length === 0) {
+      throw new Error("Video not found or is private/unavailable");
+    }
+
+    const videoInfo = videoData.items[0];
+
+    if (videoInfo.status?.embeddable === false) {
+      throw new Error(
+        "This video cannot be embedded. The creator has disabled embedding.",
+      );
+    }
+
+    const durationSeconds = parseDuration(videoInfo.contentDetails.duration);
+
+    const video: Video = {
+      id: videoId,
+      title: videoInfo.snippet.title,
+      thumbnail:
+        videoInfo.snippet.thumbnails.high?.url ||
+        videoInfo.snippet.thumbnails.default.url,
+      duration: formatDuration(durationSeconds),
+      durationSeconds,
+    };
+
+    return {
+      id: videoId,
+      title: videoInfo.snippet.title,
+      description: videoInfo.snippet.description,
+      thumbnail: video.thumbnail,
+      videoCount: 1,
+      videos: [video],
+      url: `https://www.youtube.com/watch?v=${videoId}`,
+      dateAdded: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error("Error fetching video by ID:", error);
+    throw error;
+  }
+}
+
+// Fetch playlist by ID (for share links)
+export async function fetchPlaylistById(playlistId: string): Promise<Playlist> {
+  if (!playlistId) {
+    throw new Error("Invalid playlist ID");
+  }
+
+  // Reuse the existing fetchPlaylist function with constructed URL
+  return fetchPlaylist(`https://www.youtube.com/playlist?list=${playlistId}`);
+}
+
 // Fetch playlist data from YouTube API
 export async function fetchPlaylist(url: string): Promise<Playlist> {
   const playlistId = extractPlaylistId(url);

@@ -1,7 +1,7 @@
 "use client";
 
 import { ListVideo, Plus, Video } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface FabMenuProps {
   onSelect: (option: "add-playlist" | "add-video") => void;
@@ -9,12 +9,6 @@ interface FabMenuProps {
 
 export default function FabMenu({ onSelect }: FabMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-
-  // Handle mounting animation
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -25,16 +19,14 @@ export default function FabMenu({ onSelect }: FabMenuProps) {
 
   return (
     <div
-      className={`sticky bottom-[calc(var(--safe-bottom)+5rem)] right-0 z-50 flex flex-col items-end gap-3 transition-opacity duration-500 pr-4  ${
-        isVisible ? "opacity-100" : "opacity-0"
-      }`}
+      className={`sticky bottom-[calc(var(--safe-bottom)+5rem)] right-0 z-50 flex flex-col items-end gap-3 transition-opacity duration-500 pr-4 opacity-100  `}
     >
       {/* Menu Options */}
       <div
         className={`flex flex-col gap-3 transition-all duration-300 origin-bottom-right ${
           isOpen
-            ? "scale-100 opacity-100 translate-y-0"
-            : "scale-50 opacity-0 translate-y-10 pointer-events-none"
+            ? "scale-100 opacity-100 translate-y-0 "
+            : "scale-50 opacity-0 translate-y-10   pointer-events-none"
         }`}
       >
         <button

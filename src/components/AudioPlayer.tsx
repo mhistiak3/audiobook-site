@@ -1,5 +1,6 @@
 "use client";
 
+import { shareVideo } from "@/lib/share";
 import { Bookmark as BookmarkType, Video } from "@/lib/types";
 import { formatTime } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -17,6 +18,7 @@ import {
   Play,
   RotateCcw,
   RotateCw,
+  Share2,
   SkipBack,
   SkipForward,
   Volume2,
@@ -68,6 +70,7 @@ export default function AudioPlayer({
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showBookmarkMenu, setShowBookmarkMenu] = useState(false);
   const [bookmarkNote, setBookmarkNote] = useState("");
+  const [shareToast, setShareToast] = useState<string | null>(null);
   const [skipBackward] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("skipBackwardSeconds");
@@ -105,7 +108,7 @@ export default function AudioPlayer({
   useEffect(() => {
     if (currentVideo) {
       dispatch(
-        setCurrentVideo({ videoId: currentVideo.id, index: currentVideoIndex })
+        setCurrentVideo({ videoId: currentVideo.id, index: currentVideoIndex }),
       );
       hasRestoredPosition.current = false;
     }
@@ -200,7 +203,7 @@ export default function AudioPlayer({
                 playlistId,
                 currentTime,
                 duration: videoDuration,
-              })
+              }),
             );
           }
         }
@@ -508,6 +511,26 @@ export default function AudioPlayer({
                 onFinishChapter={handleNext}
               />
               <button
+                onClick={async () => {
+                  const result = await shareVideo(
+                    currentVideo.id,
+                    currentVideo.title,
+                  );
+                  if (result.success) {
+                    setShareToast(
+                      result.method === "clipboard"
+                        ? "Link copied!"
+                        : "Shared!",
+                    );
+                    setTimeout(() => setShareToast(null), 2000);
+                  }
+                }}
+                className="text-muted hover:text-white hover:bg-hover p-2 rounded-full transition-colors"
+                title="Share Video"
+              >
+                <Share2 size={20} />
+              </button>
+              <button
                 onClick={() => setShowSpeedMenu(true)}
                 className="text-muted hover:text-white hover:bg-hover p-2 rounded-full transition-colors"
                 title="Playback Speed"
@@ -756,6 +779,15 @@ export default function AudioPlayer({
                 Save Bookmark
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Toast */}
+      {shareToast && (
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-80 animate-fadeIn">
+          <div className="bg-primary text-black px-4 py-2 rounded-full shadow-lg text-sm font-medium">
+            {shareToast}
           </div>
         </div>
       )}
