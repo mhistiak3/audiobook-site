@@ -1,157 +1,50 @@
-"use client";
+import { Metadata } from "next";
+import SharePlaylistClient from "./SharePlaylistClient";
 
-import { useAuth } from "@/context/AuthContext";
-import { hybridStorage } from "@/lib/hybridStorage";
-import { Playlist } from "@/lib/types";
-import { fetchPlaylistById } from "@/lib/youtube";
-import { useAppDispatch } from "@/store/hooks";
-import { setVideoProgress } from "@/store/playerSlice";
-import { addPlaylist, setPlaylists } from "@/store/playlistSlice";
-import { CheckCircle, Loader2, Music2, XCircle } from "lucide-react";
-import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
 
-type ShareStatus = "loading" | "adding" | "success" | "error" | "exists";
+// Generate dynamic metadata for OG tags
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { id: playlistId } = await params;
 
-export default function SharePlaylistPage() {
-  const params = useParams();
-  const router = useRouter();
-  const playlistId = params.id as string;
-  const dispatch = useAppDispatch();
-  const { loading: authLoading } = useAuth();
+  // For playlists, we can't get thumbnail without API call
+  // Use a generic playlist image or fetch from YouTube
+  const playlistThumb = `https://i.ytimg.com/vi/${playlistId}/hqdefault.jpg`;
 
-  const [status, setStatus] = useState<ShareStatus>("loading");
-  const [error, setError] = useState<string>("");
-  const [playlistData, setPlaylistData] = useState<Playlist | null>(null);
-  const hasRun = useRef(false);
+  return {
+    title: "Listen to Playlist on Audiobook Player",
+    description:
+      "Someone shared a playlist with you. Click to add it to your library and start listening!",
+    openGraph: {
+      title: "🎧 Playlist Shared - Audiobook Player",
+      description:
+        "Someone shared an audiobook playlist with you. Click to add it to your library and start listening!",
+      type: "music.playlist",
+      images: [
+        {
+          url: playlistThumb,
+          width: 480,
+          height: 360,
+          alt: "Playlist thumbnail",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "🎧 Playlist Shared - Audiobook Player",
+      description:
+        "Someone shared an audiobook playlist with you. Click to add it to your library!",
+      images: [playlistThumb],
+    },
+  };
+}
 
-  useEffect(() => {
-    const handleSharedPlaylist = async () => {
-      // Prevent running multiple times
-      if (hasRun.current || authLoading) return;
-      hasRun.current = true;
+export default async function SharePlaylistPage({ params }: PageProps) {
+  const { id: playlistId } = await params;
 
-      // Load existing playlists
-      const [playlistsData, progressData] = await Promise.all([
-        hybridStorage.getPlaylists(),
-        hybridStorage.getVideoProgress(),
-      ]);
-      dispatch(setPlaylists(playlistsData));
-      dispatch(setVideoProgress(progressData));
-
-      // Check if playlist already exists in library
-      const existingPlaylist = playlistsData.find((p) => p.id === playlistId);
-      if (existingPlaylist) {
-        setPlaylistData(existingPlaylist);
-        setStatus("exists");
-        // Navigate to playlist after short delay
-        setTimeout(() => {
-          router.replace(`/playlist/${playlistId}`);
-        }, 1500);
-        return;
-      }
-
-      // Fetch and add playlist
-      setStatus("adding");
-      try {
-        const playlist = await fetchPlaylistById(playlistId);
-        setPlaylistData(playlist);
-        dispatch(addPlaylist(playlist));
-        setStatus("success");
-
-        // Navigate to playlist after short delay
-        setTimeout(() => {
-          router.replace(`/playlist/${playlistId}`);
-        }, 1500);
-      } catch (err) {
-        console.error("Error adding shared playlist:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load playlist",
-        );
-        setStatus("error");
-      }
-    };
-
-    handleSharedPlaylist();
-  }, [playlistId, authLoading, dispatch, router]);
-
-  return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
-      <div className="max-w-sm w-full text-center">
-        {/* Playlist Preview Card */}
-        <div className="bg-card rounded-2xl p-6 shadow-xl mb-6">
-          {playlistData ? (
-            <>
-              <div className="relative w-32 h-32 mx-auto rounded-lg overflow-hidden mb-4 shadow-lg">
-                <Image
-                  src={playlistData.thumbnail}
-                  alt={playlistData.title}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <h2 className="text-lg font-bold text-white mb-2 line-clamp-2">
-                {playlistData.title}
-              </h2>
-              <p className="text-muted text-sm">
-                {playlistData.videoCount} chapters
-              </p>
-            </>
-          ) : (
-            <div className="w-32 h-32 mx-auto rounded-lg bg-hover flex items-center justify-center mb-4">
-              <Music2 size={48} className="text-muted" />
-            </div>
-          )}
-
-          {/* Status Display */}
-          <div className="mt-4">
-            {(status === "loading" || status === "adding") && (
-              <div className="flex items-center justify-center gap-3 text-muted">
-                <Loader2 size={24} className="animate-spin text-primary" />
-                <span>
-                  {status === "loading"
-                    ? "Loading..."
-                    : "Adding to your library..."}
-                </span>
-              </div>
-            )}
-
-            {status === "success" && (
-              <div className="flex items-center justify-center gap-3 text-primary">
-                <CheckCircle size={24} />
-                <span>Added to library! Redirecting...</span>
-              </div>
-            )}
-
-            {status === "exists" && (
-              <div className="flex items-center justify-center gap-3 text-primary">
-                <CheckCircle size={24} />
-                <span>Already in your library! Opening...</span>
-              </div>
-            )}
-
-            {status === "error" && (
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-3 text-error mb-4">
-                  <XCircle size={24} />
-                  <span>Failed to load</span>
-                </div>
-                <p className="text-sm text-muted mb-4">{error}</p>
-                <button
-                  onClick={() => router.push("/")}
-                  className="bg-primary text-black font-bold py-3 px-6 rounded-full hover:scale-105 transition-transform"
-                >
-                  Go to Library
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Shared via text */}
-        <p className="text-muted text-sm">Shared via Audiobook Player</p>
-      </div>
-    </div>
-  );
+  return <SharePlaylistClient playlistId={playlistId} />;
 }
