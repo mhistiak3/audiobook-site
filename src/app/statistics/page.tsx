@@ -4,14 +4,18 @@ import { useAuth } from "@/context/AuthContext";
 import { useAppSelector } from "@/store/hooks";
 import { Award, BookOpen, Clock, Headphones, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function StatisticsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const playlists = useAppSelector((state) => state.playlists.playlists);
   const videoProgress = useAppSelector((state) => state.player.videoProgress);
-  const mounted = true;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -26,7 +30,7 @@ export default function StatisticsPage() {
     // Total listening time (in seconds)
     const totalListeningTime = progressArray.reduce(
       (acc, progress) => acc + (progress.currentTime || 0),
-      0
+      0,
     );
 
     // Completed chapters
@@ -46,7 +50,7 @@ export default function StatisticsPage() {
       .filter((p) => !p.watched && p.currentTime > 0)
       .sort(
         (a, b) =>
-          new Date(b.lastPlayed).getTime() - new Date(a.lastPlayed).getTime()
+          new Date(b.lastPlayed).getTime() - new Date(a.lastPlayed).getTime(),
       ).length;
 
     // This week stats (last 7 days)
@@ -54,12 +58,12 @@ export default function StatisticsPage() {
     weekAgo.setDate(weekAgo.getDate() - 7);
 
     const thisWeekProgress = progressArray.filter(
-      (p) => new Date(p.lastPlayed) > weekAgo
+      (p) => new Date(p.lastPlayed) > weekAgo,
     );
 
     const thisWeekTime = thisWeekProgress.reduce(
       (acc, p) => acc + (p.currentTime || 0),
-      0
+      0,
     );
 
     const thisWeekCompleted = thisWeekProgress.filter((p) => p.watched).length;

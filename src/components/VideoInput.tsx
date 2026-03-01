@@ -7,6 +7,12 @@ import { Loader2, Plus, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+// YouTube URL validation regex
+const YOUTUBE_VIDEO_REGEX =
+  /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=[\w-]+|youtu\.be\/[\w-]+)/i;
+const YOUTUBE_URL_REGEX =
+  /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/i;
+
 export default function VideoInput() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,12 +20,38 @@ export default function VideoInput() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
+  const validateYouTubeUrl = (
+    url: string,
+  ): { valid: boolean; message: string } => {
+    const trimmedUrl = url.trim();
+
+    if (!trimmedUrl) {
+      return { valid: false, message: "Please enter a YouTube video URL" };
+    }
+
+    // Check if it's a valid URL format
+    if (!YOUTUBE_URL_REGEX.test(trimmedUrl)) {
+      return { valid: false, message: "Please enter a valid YouTube URL" };
+    }
+
+    // Check if it's a video URL (not playlist)
+    if (!YOUTUBE_VIDEO_REGEX.test(trimmedUrl)) {
+      return {
+        valid: false,
+        message: "Please enter a valid YouTube video URL (not a playlist)",
+      };
+    }
+
+    return { valid: true, message: "" };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!url.trim()) {
-      setError("Please enter a YouTube video URL");
+    const validation = validateYouTubeUrl(url);
+    if (!validation.valid) {
+      setError(validation.message);
       return;
     }
 

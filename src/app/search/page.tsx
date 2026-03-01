@@ -70,7 +70,7 @@ export default function SearchPage() {
   return (
     <div className="flex flex-col min-h-screen bg-linear-to-b from-hover to-surface pb-24">
       {/* Header */}
-      <div className="pt-(--safe-top) px-4 pb-4 sticky top-0 z-10 bg-surface/90 backdrop-blur-md border-b border-white/5">
+      <div className="pt-[var(--safe-top)] px-4 pb-4 sticky top-0 z-10 bg-surface/90 backdrop-blur-md border-b border-white/5">
         <div className="flex items-center gap-3 pt-4 mb-4">
           <button
             onClick={() => router.back()}

@@ -72,9 +72,12 @@ export default function Home() {
         if (!playlist) return null;
 
         const video = playlist.videos.find((v) => v.id === progress.videoId);
+        if (!video) return null;
+
         const videoIndex = playlist.videos.findIndex(
           (v) => v.id === progress.videoId,
         );
+        if (videoIndex === -1) return null;
 
         return {
           playlist,
@@ -151,7 +154,7 @@ export default function Home() {
   });
 
   return (
-    <div className="flex flex-col h-full bg-linear-to-b from-hover to-surface min-h-screen pb-24">
+    <div className="flex flex-col h-full bg-gradient-to-b from-hover to-surface min-h-screen pb-24">
       {/* API Key Prompt Banner */}
       <ApiKeyPrompt />
 

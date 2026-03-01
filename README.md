@@ -1,13 +1,14 @@
 # 🎧 Audiobook Player
 
-A minimal, modern audiobook player built with Next.js that transforms YouTube playlists into an immersive listening experience. 
+A minimal, modern audiobook player built with Next.js that transforms YouTube playlists into an immersive listening experience.
+
 ## ✨ Features
 
 ### 🎯 New Features (December 2025)
 
 - **Skip Forward/Backward Buttons** ⏪⏩ - Quick skip buttons in mini and full player with customizable intervals (5-60s)
 - **Sleep Timer** ⏰ - Set automatic playback stop with presets (15/30/45/60 min) or end of chapter
-- **Playback Speed Control** 🎚️ - Quick speed presets (0.75x - 2x) with memory across sessions
+- **Playback Speed Control** - Quick speed presets (0.75x - 2x) with memory across sessions
 - **Bookmarks & Notes** 📌 - Save timestamped moments with optional notes, synced to cloud
 - **Continue Listening** 🔄 - Quick access to recently played audiobooks with progress
 - **Statistics Dashboard** 📊 - Track listening time, completed chapters, and achievements
@@ -61,7 +62,6 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your_anon_key
 ```
 
 3. **Run database migration** ⚠️ REQUIRED:
-
    - Open [Supabase Dashboard](https://supabase.com/dashboard)
    - Go to SQL Editor
    - Copy & run `supabase/migrations/001_initial_schema.sql`
@@ -84,13 +84,11 @@ npm start
 ## How to Use
 
 1. **Load a Playlist**
-
    - Paste a YouTube playlist URL into the input field
    - Click "Load Playlist"
    - The playlist will be fetched and saved locally
 
 2. **Play Your Audiobook**
-
    - Click on any playlist card to view chapters
    - Click on a chapter to start playing
    - Use the player controls at the bottom of the screen

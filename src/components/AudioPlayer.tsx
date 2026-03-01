@@ -71,6 +71,7 @@ export default function AudioPlayer({
   const [showBookmarkMenu, setShowBookmarkMenu] = useState(false);
   const [bookmarkNote, setBookmarkNote] = useState("");
   const [shareToast, setShareToast] = useState<string | null>(null);
+  const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
   const [skipBackward] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("skipBackwardSeconds");
@@ -122,6 +123,11 @@ export default function AudioPlayer({
         document.activeElement instanceof HTMLInputElement ||
         document.activeElement instanceof HTMLTextAreaElement
       ) {
+        return;
+      }
+
+      // Don't execute shortcuts if player is not ready
+      if (!playerRef.current) {
         return;
       }
 
@@ -362,9 +368,12 @@ export default function AudioPlayer({
       setShowBookmarkMenu(false);
       setBookmarkNote("");
       // Show success feedback
-      alert("Bookmark saved!");
+      setBookmarkToast("Bookmark saved!");
+      setTimeout(() => setBookmarkToast(null), 2000);
     } catch (error) {
       console.error("Failed to save bookmark:", error);
+      setBookmarkToast("Failed to save bookmark");
+      setTimeout(() => setBookmarkToast(null), 2000);
     }
   };
 
@@ -400,26 +409,28 @@ export default function AudioPlayer({
 
   return (
     <>
-      {/* Hidden Player for Logic */}
-      <div className="fixed top-0 left-0 w-px h-px opacity-0 pointer-events-none overflow-hidden">
-        <YouTube
-          videoId={currentVideo.id}
-          onReady={onPlayerReady}
-          onStateChange={onPlayerStateChange}
-          opts={{
-            height: "100%",
-            width: "100%",
-            playerVars: {
-              autoplay: 1,
-              controls: 0,
-              disablekb: 1,
-              fs: 0,
-              modestbranding: 1,
-              playsinline: 1,
-            },
-          }}
-        />
-      </div>
+      {/* Hidden Player for Logic - Only render when we have a video */}
+      {currentVideo && (
+        <div className="fixed top-0 left-0 w-px h-px opacity-0 pointer-events-none overflow-hidden">
+          <YouTube
+            videoId={currentVideo.id}
+            onReady={onPlayerReady}
+            onStateChange={onPlayerStateChange}
+            opts={{
+              height: "100%",
+              width: "100%",
+              playerVars: {
+                autoplay: 1,
+                controls: 0,
+                disablekb: 1,
+                fs: 0,
+                modestbranding: 1,
+                playsinline: 1,
+              },
+            }}
+          />
+        </div>
+      )}
 
       {/* Mini Player (Bottom Bar) */}
       {!isExpanded && (
@@ -788,6 +799,15 @@ export default function AudioPlayer({
         <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-80 animate-fadeIn">
           <div className="bg-primary text-black px-4 py-2 rounded-full shadow-lg text-sm font-medium">
             {shareToast}
+          </div>
+        </div>
+      )}
+
+      {/* Bookmark Toast */}
+      {bookmarkToast && (
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-80 animate-fadeIn">
+          <div className="bg-primary text-black px-4 py-2 rounded-full shadow-lg text-sm font-medium">
+            {bookmarkToast}
           </div>
         </div>
       )}

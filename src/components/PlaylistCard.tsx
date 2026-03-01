@@ -83,19 +83,28 @@ export default function PlaylistCard({
           onClick={async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            // If single video, share as video. If playlist, share as playlist.
-            const result =
-              playlist.videoCount === 1
-                ? await shareVideo(playlist.videos[0].id, playlist.title)
-                : await sharePlaylist(
-                    playlist.id,
-                    playlist.title,
-                    playlist.videoCount,
-                  );
-            if (result.success) {
-              setShareToast(
-                result.method === "clipboard" ? "Link copied!" : "Shared!",
-              );
+            try {
+              // If single video, share as video. If playlist, share as playlist.
+              const result =
+                playlist.videoCount === 1
+                  ? await shareVideo(playlist.videos[0].id, playlist.title)
+                  : await sharePlaylist(
+                      playlist.id,
+                      playlist.title,
+                      playlist.videoCount,
+                    );
+              if (result.success) {
+                setShareToast(
+                  result.method === "clipboard" ? "Link copied!" : "Shared!",
+                );
+                setTimeout(() => setShareToast(null), 2000);
+              } else {
+                setShareToast("Failed to share");
+                setTimeout(() => setShareToast(null), 2000);
+              }
+            } catch (error) {
+              console.error("Share error:", error);
+              setShareToast("Failed to share");
               setTimeout(() => setShareToast(null), 2000);
             }
           }}

@@ -7,6 +7,12 @@ import { Loader2, Plus, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+// YouTube URL validation regex
+const YOUTUBE_PLAYLIST_REGEX =
+  /^(https?:\/\/)?(www\.)?(youtube\.com\/playlist\?list=[\w-]+|youtu\.be\/[\w-]+|youtube\.com\/watch\?v=[\w-]+&list=[\w-]+)/i;
+const YOUTUBE_URL_REGEX =
+  /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/i;
+
 export default function PlaylistInput() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,12 +20,39 @@ export default function PlaylistInput() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
+  const validateYouTubeUrl = (
+    url: string,
+  ): { valid: boolean; message: string } => {
+    const trimmedUrl = url.trim();
+
+    if (!trimmedUrl) {
+      return { valid: false, message: "Please enter a YouTube playlist URL" };
+    }
+
+    // Check if it's a valid URL format
+    if (!YOUTUBE_URL_REGEX.test(trimmedUrl)) {
+      return { valid: false, message: "Please enter a valid YouTube URL" };
+    }
+
+    // Check if it contains a playlist parameter
+    if (!YOUTUBE_PLAYLIST_REGEX.test(trimmedUrl)) {
+      return {
+        valid: false,
+        message:
+          "Please enter a valid YouTube playlist URL (must contain ?list=)",
+      };
+    }
+
+    return { valid: true, message: "" };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!url.trim()) {
-      setError("Please enter a YouTube playlist URL");
+    const validation = validateYouTubeUrl(url);
+    if (!validation.valid) {
+      setError(validation.message);
       return;
     }
 
