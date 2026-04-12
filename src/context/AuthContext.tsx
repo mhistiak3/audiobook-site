@@ -1,10 +1,10 @@
 "use client";
 
-import { hybridStorage } from "@/lib/hybridStorage";
+import { hybridStorage, invalidateAuthCache } from "@/lib/hybridStorage";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 interface AuthContextType {
   user: User | null;
@@ -20,24 +20,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const supabase = createClient();
+  // Memoize so the same instance is reused across renders, preventing
+  // the useEffect dependency from changing every render (infinite loop).
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    let cancelled = false;
+
+    // Wrap in try/catch with a 5-second timeout so that an unreachable
+    // Supabase instance (ERR_NAME_NOT_RESOLVED, paused project, wrong env
+    // var) never leaves the app stuck in a permanent loading state.
+    const loadSession = async () => {
+      try {
+        const timeoutPromise = new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error("Supabase session timeout")), 5000)
+        );
+        const sessionPromise = supabase.auth.getSession().then(
+          ({ data: { session } }) => session?.user ?? null
+        );
+        const resolvedUser = await Promise.race([sessionPromise, timeoutPromise]);
+        if (!cancelled) {
+          setUser(resolvedUser);
+          setLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSession();
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (!cancelled) {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, [supabase]);
 
   const signIn = async (email: string, password: string) => {
@@ -47,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!error) {
+      invalidateAuthCache();
       // Redirect immediately for better UX
       router.push("/");
       router.refresh();
@@ -91,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Error syncing data to localStorage:", syncError);
     }
 
+    invalidateAuthCache();
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();

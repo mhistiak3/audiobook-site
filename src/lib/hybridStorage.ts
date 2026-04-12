@@ -13,7 +13,10 @@ interface VideoProgress {
   watched: boolean;
 }
 
-// Helper to check if we should use Supabase (logged in AND online)
+// Cache auth state for 30 seconds to avoid a getUser() network round-trip
+// on every single hybridStorage call (getPlaylists, getPlaylist, etc.).
+let cachedAuthState: { user: any; expiresAt: number } | null = null;
+
 async function shouldUseSupabase(): Promise<{
   useSupabase: boolean;
   user: any;
@@ -23,17 +26,29 @@ async function shouldUseSupabase(): Promise<{
     return { useSupabase: false, user: null };
   }
 
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // If not logged in, use localStorage
-  if (!user) {
-    return { useSupabase: false, user: null };
+  const now = Date.now();
+  if (cachedAuthState && now < cachedAuthState.expiresAt) {
+    const user = cachedAuthState.user;
+    return { useSupabase: !!user, user };
   }
 
-  return { useSupabase: true, user };
+  try {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    cachedAuthState = { user, expiresAt: now + 30_000 };
+    return { useSupabase: !!user, user };
+  } catch {
+    // Supabase unreachable — fall back to localStorage
+    return { useSupabase: false, user: null };
+  }
+}
+
+// Call this after sign-in / sign-out so the cache reflects the new state.
+export function invalidateAuthCache() {
+  cachedAuthState = null;
 }
 
 export const hybridStorage = {

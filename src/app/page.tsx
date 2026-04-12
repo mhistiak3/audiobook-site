@@ -257,7 +257,37 @@ export default function Home() {
           </div>
         ) : (
           <div className="animate-fadeIn py-2">
-            {playlists.length > 0 ? (
+            {playlists.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+                <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mb-4">
+                  <Library size={32} className="text-gray-500" />
+                </div>
+                <h3 className="text-white font-bold mb-2">
+                  Your library is empty
+                </h3>
+                <p className="text-gray-400 text-sm mb-6">
+                  Import a YouTube playlist or video to get started.
+                </p>
+                <button
+                  onClick={() => setActiveTab("add-playlist")}
+                  className="px-6 py-3 bg-light text-dark rounded-full font-bold text-sm hover:scale-105 transition-transform"
+                >
+                  Get Started
+                </button>
+              </div>
+            ) : filteredPlaylists.length === 0 ? (
+              <div className="text-center py-12 px-6">
+                <p className="text-gray-400 text-sm">
+                  No{" "}
+                  {libraryFilter === "playlists"
+                    ? "playlists"
+                    : libraryFilter === "videos"
+                      ? "videos"
+                      : "items"}{" "}
+                  found
+                </p>
+              </div>
+            ) : (
               <>
                 {/* Continue Listening Section */}
                 {continueListening.length > 0 && (
@@ -356,36 +386,6 @@ export default function Home() {
                   ))}
                 </div>
               </>
-            ) : filteredPlaylists.length === 0 ? (
-              <div className="text-center py-12 px-6">
-                <p className="text-gray-400 text-sm">
-                  No{" "}
-                  {libraryFilter === "playlists"
-                    ? "playlists"
-                    : libraryFilter === "videos"
-                      ? "videos"
-                      : "items"}{" "}
-                  found
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-                <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mb-4">
-                  <Library size={32} className="text-gray-500" />
-                </div>
-                <h3 className="text-white font-bold mb-2">
-                  Your library is empty
-                </h3>
-                <p className="text-gray-400 text-sm mb-6">
-                  Import a YouTube playlist or video to get started.
-                </p>
-                <button
-                  onClick={() => setActiveTab("add-playlist")}
-                  className="px-6 py-3 bg-light text-dark rounded-full font-bold text-sm hover:scale-105 transition-transform"
-                >
-                  Get Started
-                </button>
-              </div>
             )}
           </div>
         )}

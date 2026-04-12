@@ -29,8 +29,13 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refreshing the auth token
-  await supabase.auth.getUser();
+  // Refreshing the auth token. Wrapped in try/catch so an unreachable
+  // Supabase instance doesn't crash the middleware and block all routes.
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    // Supabase unreachable — continue without refreshing the session.
+  }
 
   return supabaseResponse;
 }

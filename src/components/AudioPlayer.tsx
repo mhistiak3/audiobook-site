@@ -50,6 +50,7 @@ export default function AudioPlayer({
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(() => {
+    if (typeof window === "undefined") return 1;
     const savedSpeed = localStorage.getItem("defaultPlaybackSpeed");
     return savedSpeed ? parseFloat(savedSpeed) : 1;
   });
