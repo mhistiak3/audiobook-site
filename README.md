@@ -4,7 +4,7 @@ A minimal, modern audiobook player built with Next.js that transforms YouTube pl
 
 ## ✨ Features
 
-### 🎯 New Features (December 2025)
+### 🎯 New Features 
 
 - **Skip Forward/Backward Buttons** ⏪⏩ - Quick skip buttons in mini and full player with customizable intervals (5-60s)
 - **Sleep Timer** ⏰ - Set automatic playback stop with presets (15/30/45/60 min) or end of chapter
